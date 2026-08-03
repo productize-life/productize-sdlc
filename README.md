@@ -19,11 +19,11 @@ grows — your pipeline, your registry, your rules.
 |---|---|
 | **The Registry** (`registry/SDLC-SKILL-REGISTRY.template.md`) | A single markdown control plane: phase → primary skill, agent → permitted skills, selection rules, supersede + drift logs. Agent-agnostic — any AI agent can read it. |
 | **`sdlc-registry`** skill | Init the registry in your repo, consult it before claiming coverage, register changes same-turn. |
-| **`sdlc-implement`** skill | Implement from spec/tickets: branch-first, pre-agreed seams, end at review not push, remote builds wrapped. |
-| **`sdlc-merge-resolve`** skill | Merge/rebase conflicts with an abort-and-escalate escape hatch. |
-| **`sdlc-triage`** skill | Tracker-first triage state machine that writes agent-ready briefs. |
-| **`templates/issue-tracker.template.md`** | Fill-in doc: your tracker's states, labels, and your human-approval gate. |
-| **`CROSSWALK.md`** | Intent → skill router + the full provenance of what we took from upstream and what we patched. |
+| **Ours — grown in practice, no upstream** | `sdlc-spec` (interview-driven spec + seams appendix + spec review) · `sdlc-qe` (quadrant test design + vacuous-assertion audit) · `sdlc-review` (adversarial 2nd-engine review) · `sdlc-pr` (intent-first PR pipeline) · `sdlc-ddd` (domain coaching, CONTEXT.md) · `sdlc-adr` + `sdlc-pe-review` (decisions written and translated to PM language) |
+| **Patched from upstream** | `sdlc-implement` (branch-first/seams), `sdlc-merge-resolve` (abort-and-escalate), `sdlc-triage` (tracker-first). |
+| **Adopt as-is from Matt Pocock** | `to-tickets`, `tdd`, `grilling`, `wayfinder`, `code-review`, `research`, `diagnosing-bugs`, `domain-modeling`, `codebase-design`, `prototype` — see CROSSWALK.md. |
+| **`templates/`** | `pr-template.md` (the intent-first PR body with runnable-evidence accountability) + `issue-tracker.template.md` (states, labels, your human-approval gate). |
+| **`CROSSWALK.md`** | Intent → skill router + the full provenance of what we took, patched, and wrote ourselves. |
 
 ## Two ways to consume it
 

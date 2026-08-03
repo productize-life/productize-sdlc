@@ -52,6 +52,27 @@ skills, MIT licensed. Verified against upstream commit `2ab9580` (2026-07-28) on
 CLAUDE.md — we hand-write `docs/agents/issue-tracker.md` instead, advisory only) · `ask-matt`
 (router — this CROSSWALK fills that role).
 
+## 3. Ours — grown in a private fleet lab, no upstream
+
+Shared as public good (วิทยาทาน), generalized from several years of running AI-agent SDLC
+practice. Product-specific internals were stripped; the disciplines are the shareable part.
+
+| Skill | What it carries |
+|---|---|
+| `sdlc-registry` | The control-plane idea itself: registry > skill self-claim; consult before claiming; same-turn updates. |
+| `sdlc-spec` | One-phase-per-turn grooming; the **Testing Decisions / seams appendix** as the contract between spec and test-first build; multi-pass spec review (completeness / consistency / dev-readiness / testability bounce). |
+| `sdlc-qe` | Quadrant-mapped test plans read from the spec's seams; the **vacuous-assertion audit** (`undefined === undefined` → PASS is a critical finding). |
+| `sdlc-review` | 2nd-engine ≠ maker-engine; P1/P2/P3 taxonomy with failure scenarios; warn-not-block; understanding gate before reporting. |
+| `sdlc-pr` | Intent-first PR body (Summary + Intent, file tables, review-fixes), review-matrix routing by risk, mandatory 2nd-engine section, **Accountability with runnable evidence**. |
+| `sdlc-ddd` | Coach-not-generator domain discovery; the one-file write exception (CONTEXT.md) for confirmed language only. |
+| `sdlc-adr` / `sdlc-pe-review` | ADRs small enough to read, with sacred status and first-class deferred items; technical decisions translated to PM-decidable questions with a recommendation. |
+
+Templates: `templates/pr-template.md` (the exact PR body we use), `templates/issue-tracker.template.md`.
+
+Complementary disciplines (handoffs, verify-before-claim, no-fabricated-output, second-opinion)
+ship in the sibling kit `productize-starter-fleet-kit` in this org — we point there instead of
+duplicating.
+
 ## Keeping this pack honest
 
 - When upstream moves, re-run the drift check: diff the patched skills against the new upstream,

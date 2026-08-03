@@ -1,7 +1,7 @@
 {
   "name": "productize-sdlc",
   "description": "SDLC registry + gated pipeline skills: sdlc-registry (init/consult the control plane), sdlc-implement (branch-first build), sdlc-merge-resolve (abort-and-escalate), sdlc-triage (tracker-first triage).",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": {
     "name": "Productize.life",
     "url": "https://productize.life"
