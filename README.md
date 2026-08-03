@@ -3,12 +3,15 @@
 A product-agnostic **SDLC control layer for AI-agent teams**, by
 [Productize.life](https://productize.life).
 
-Most skill sets grow by accident: strong at the ends (planning, review, shipping) and hollow in
-the middle (spec → tickets → implement → test-first). This pack fills the middle with discipline,
-and puts a **registry** in charge so the skill set stays governable as it grows.
+**Claude Code for SDLC, for non-developers.** You don't need to be an engineer to run a real
+development lifecycle with AI agents — you need a pipeline with discipline and a control plane
+that keeps it governable. This pack is that layer: it fills the hollow middle of most skill sets
+(spec → tickets → implement → test-first) and puts a **registry** in charge, so a product person,
+founder, or PM can own the whole SDLC through Claude Code.
 
-Companion to the course **Prompting To Own Agent** — the part where you stop borrowing agents and
-start owning one: your pipeline, your registry, your rules.
+Most skill sets grow by accident: strong at the ends (planning, review, shipping) and hollow in
+the middle. This pack fills the middle with discipline, and keeps the skill set governable as it
+grows — your pipeline, your registry, your rules.
 
 ## What's inside
 
