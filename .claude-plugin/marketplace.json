@@ -1,0 +1,15 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "productize-sdlc",
+  "description": "A product-agnostic SDLC control layer for AI-agent teams: a registry that governs which skill covers which phase, plus gated skills for the build pipeline middle (implement, merge-conflicts, triage).",
+  "owner": {
+    "name": "Productize.life"
+  },
+  "plugins": [
+    {
+      "name": "productize-sdlc",
+      "description": "SDLC registry + gated pipeline skills. Install for Claude Code, or read the registry markdown directly from any AI agent.",
+      "source": "./plugins/productize-sdlc"
+    }
+  ]
+}
