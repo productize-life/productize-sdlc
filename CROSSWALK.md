@@ -19,6 +19,7 @@ Two tables: (1) **intent → skill** — what to reach for, and how the skills c
 | "Design the module interface / seams" | upstream `codebase-design` (adopt as-is) |
 | "Plan this huge foggy effort" | upstream `wayfinder` (adopt as-is) |
 | "Review the diff against standards/spec" | upstream `code-review` (adopt as-is) |
+| "Design the screens / wireframe this / map the user journey" | `sdlc-product-design` |
 | "How does this code work?" / before changing a subsystem | `sdlc-code-how` |
 | "Why is it built this way?" / history of a decision | `sdlc-code-why` |
 | "What could this fix break?" / after a fix is chosen | `sdlc-blast-radius` |
@@ -28,7 +29,7 @@ Two tables: (1) **intent → skill** — what to reach for, and how the skills c
 ## The chain (how a feature walks through)
 
 ```
-grilling (with the human) → to-spec / your spec skill → to-tickets (sdlc-triage writes the seams)
+grilling (with the human) → to-spec / your spec skill → sdlc-product-design (UI work, before tickets) → to-tickets (sdlc-triage writes the seams)
   → sdlc-code-how before touching unfamiliar code → sdlc-implement + tdd per ticket
   (fresh context each, seams in the brief) → sdlc-blast-radius on the chosen change
   → code-review + a second-engine review → sdlc-pr → sdlc-watch-pr to a verdict → human merge
@@ -91,6 +92,7 @@ practice. Product-specific internals were stripped; the disciplines are the shar
 | `sdlc-review` | 2nd-engine ≠ maker-engine; P1/P2/P3 taxonomy with failure scenarios; warn-not-block; understanding gate before reporting. |
 | `sdlc-pr` | Intent-first PR body (Summary + Intent, file tables, review-fixes), review-matrix routing by risk, mandatory 2nd-engine section, **Accountability with runnable evidence**. |
 | `sdlc-ddd` | Coach-not-generator domain discovery; the one-file write exception (CONTEXT.md) for confirmed language only. |
+| `sdlc-product-design` | Our synthesis of published methods (sources cited in the skill). UX/product design as a phase before the build: JTBD per persona, journey maps whose "cognitive state" is three checkable questions (expectation, wayfinding, decision), lo-fi wireframes with interaction notes that test design reads. |
 | `sdlc-adr` / `sdlc-pe-review` | ADRs small enough to read, with sacred status and first-class deferred items; technical decisions translated to PM-decidable questions with a recommendation. |
 
 Templates: `templates/pr-template.md` (the exact PR body we use), `templates/issue-tracker.template.md`.

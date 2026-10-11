@@ -44,6 +44,7 @@ Suggested starter mapping if you install the `productize-sdlc` pack (edit to you
 | Domain modelling | `sdlc-ddd` | pack | 🟩 | coach style; persists CONTEXT.md |
 | Understand existing code (how it works) | `sdlc-code-how` | pack (pstack, MIT) | 🟩 | cited walkthrough before you change anything; new in 0.3.0 |
 | Understand existing code (why it is this way) | `sdlc-code-why` | pack (pstack, MIT) | 🟩 | cited rationale from git, tracker, postmortems; new in 0.3.0 |
+| Design — UX/product (JTBD, journeys, screen map, lo-fi wireframes) | `sdlc-product-design` | pack | 🟩 | before implement, not a review after the UI exists; interaction notes feed `sdlc-qe`; new in 0.3.1 |
 | Design decisions (ADR) | `sdlc-adr` + `sdlc-pe-review` | pack | 🟩 | write + PM-language review |
 | Grilling (sharpen plan/design) | `grilling` | pocock | 🟢 | human-in-loop only |
 | Big-effort planning | `wayfinder` | pocock | 🟢 | |

@@ -1,7 +1,7 @@
 {
   "name": "productize-sdlc",
-  "description": "SDLC registry + gated pipeline skills: registry, spec, triage (with seams), implement, QE, review (runnable-tree precheck), merge-resolve, PR + watch-to-verdict, code how/why, blast radius, decision trail.",
-  "version": "0.3.0",
+  "description": "SDLC registry + gated pipeline skills: registry, spec, UX/product design, triage (with seams), implement, QE, review (runnable-tree precheck), merge-resolve, PR + watch-to-verdict, code how/why, blast radius, decision trail.",
+  "version": "0.3.1",
   "author": {
     "name": "Productize.life",
     "url": "https://productize.life"
