@@ -9,6 +9,17 @@ Two tables: (1) **intent → skill** — what to reach for, and how the skills c
 |---|---|
 | "Set up the registry" / first time in a repo | `sdlc-registry` (Mode 1 init) |
 | "Which skill covers this?" / "May this agent run that?" | `sdlc-registry` (Mode 2 consult) |
+| "Write / groom a spec" / "is this spec dev-ready?" | `sdlc-spec` (Mode 1 write, Mode 2 review) |
+| "Turn this conversation into a spec" (no interview) | upstream `to-spec` (adopt as-is) |
+| "What are the domains / bounded contexts here?" | `sdlc-ddd` |
+| "Change the domain model itself" | upstream `domain-modeling` (adopt as-is) |
+| "Write this decision down" / ADR | `sdlc-adr` |
+| "Explain this technical decision in PM terms" / review an ADR | `sdlc-pe-review` |
+| "Try this idea quickly, throwaway" | upstream `prototype` (adopt as-is) |
+| "Plan the tests from these acceptance criteria" / audit tests | `sdlc-qe` |
+| "Something is broken, find why" | upstream `diagnosing-bugs` (adopt as-is) |
+| "Second-engine review before merge" | `sdlc-review` |
+| "Open the PR" | `sdlc-pr` (body in `templates/pr-template.md`) |
 | "Implement this ticket / spec" | `sdlc-implement` (needs seams in the brief) |
 | "Merge conflict / rebase stuck" | `sdlc-merge-resolve` |
 | "What needs attention? / triage this issue" | `sdlc-triage` |
