@@ -17,7 +17,7 @@ should be invocable.
 ## 2. Pair with the upstream pack
 
 This pack assumes [mattpocock/skills](https://github.com/mattpocock/skills) is installed too —
-it adopts ten of his skills unchanged and patches three. Install his plugin, then read
+it adopts ten of those skills unchanged and patches three. Install the upstream plugin, then read
 [CROSSWALK.md](../CROSSWALK.md) for exactly which is which.
 
 ## 3. Initialize the registry in your project repo

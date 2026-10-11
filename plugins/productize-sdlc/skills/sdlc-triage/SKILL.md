@@ -79,11 +79,31 @@ Counts + one line per item; let the maintainer pick.
 4. **Grill if needed** — run your grilling skill (e.g. mattpocock `grilling`) with the maintainer
    live; an agent never stands in for the human side of a grilling session.
 5. **Apply the outcome** per the roles table: `ready-for-agent` gets an agent-brief comment
-   (AGENT-BRIEF.md format); `needs-info` gets triage notes ("What we've established" + "What we
+   (AGENT-BRIEF.md format) **that includes a Seams section** (see below); `needs-info` gets triage notes ("What we've established" + "What we
    still need" — questions must be specific and actionable); `wontfix` gets closed —
    **already implemented** = point to where it lives (no `.out-of-scope/` entry),
    **rejected enhancement** = write `.out-of-scope/` note + link, **rejected bug** = polite
    explanation + close.
+
+## ⛔ A `ready-for-agent` brief must carry seams, or the next agent stops or guesses
+
+Two downstream skills require seams in the brief and stop without them: `sdlc-implement`
+("seams arrive with the brief … never invent seams silently") and `sdlc-qe` (seams intake before
+test structure). In our own runs nothing upstream was assigned to write them into the
+tracker brief (the spec skill writes them into the spec, not the ticket), so the AFK
+triage → implement runs we observed either stopped or guessed. Triage owns that slot.
+
+Add a short **Seams** heading to the brief:
+
+- **The public interface the tests will sit on** (module/function), plus one line on why there.
+- **What is out of scope for automated tests** in this piece of work.
+- If the work should have no seams (copy or config only), write **"No seams because …"**.
+  ⛔ Never leave it blank: blank is indistinguishable from "not thought about yet", and the
+  downstream agent stops without knowing why.
+
+⛔ If you cannot decide where the seam goes, mark the issue `needs-info` and ask. **Never send
+`ready-for-agent` without this heading**: what follows is an agent stopping mid-way (best case) or
+guessing a seam and testing in the wrong place (worst case, and silent).
 
 ## Quick state override
 

@@ -27,6 +27,26 @@ disable-model-invocation: true
 - **P2** — real defect with a workaround, or a maintainability trap the next reader will hit.
 - **P3** — style/clarification; take it or drop it without ceremony.
 
+## Step 0 (mandatory): prove the reviewer's tree can run its own tests
+
+A reviewer that cannot run the tests can still say "no issues found", and it will not tell you it
+couldn't run them. Observed in our own runs: a reviewer reported no actionable issues while several of
+the test files it ran were red, for two unrelated reasons. Its clone had no installed dependencies
+(`ERR_MODULE_NOT_FOUND`), and its sandbox mounted the temp directory read-only (`EROFS`). The
+files that failed were exactly the repo's negative controls, so "tests pass" covered none of the
+proofs that the gates can go red.
+
+Before every review, in the exact tree you hand to the reviewer:
+
+```bash
+cd <tree-to-review> && <install deps, e.g. npm ci> && <run the test suite>   # → a real "fail 0"
+```
+
+- Green first, then review. Red means fix the environment, not "send it and hope the reviewer says".
+- If the repo counts its negative controls, check that line too.
+- Tests should not assume a writable system temp directory only; give them a fallback, or the
+  reviewer's sandbox cannot run them.
+
 ## Process
 
 1. Review the **diff against its base**, with the repo available so the engine can chase calls.

@@ -1,0 +1,9 @@
+{
+  "name": "@productize-sdlc/watch-pr",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --project tsconfig.json --noEmit --strict"
+  }
+}

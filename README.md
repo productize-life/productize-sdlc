@@ -21,6 +21,7 @@ grows — your pipeline, your registry, your rules.
 | **`sdlc-registry`** skill | Init the registry in your repo, consult it before claiming coverage, register changes same-turn. |
 | **Ours — grown in practice, no upstream** | `sdlc-spec` (interview-driven spec + seams appendix + spec review) · `sdlc-qe` (quadrant test design + vacuous-assertion audit) · `sdlc-review` (adversarial 2nd-engine review) · `sdlc-pr` (intent-first PR pipeline) · `sdlc-ddd` (domain coaching, CONTEXT.md) · `sdlc-adr` + `sdlc-pe-review` (decisions written and translated to PM language) |
 | **Patched from upstream** | `sdlc-implement` (branch-first/seams), `sdlc-merge-resolve` (abort-and-escalate), `sdlc-triage` (tracker-first). |
+| **Adapted from pstack (Lauren Tan)** | `sdlc-code-how` (how existing code works) · `sdlc-code-why` (why it is this way) · `sdlc-blast-radius` (evidence, by running code, that a fix is safe) · `sdlc-watch-pr` (watch a PR to a readiness verdict, with its own tested CLI) · `sdlc-show-me-your-work` (append-only decision trail + cross-family review). |
 | **Adopt as-is from Matt Pocock** | `to-tickets`, `tdd`, `grilling`, `wayfinder`, `code-review`, `research`, `diagnosing-bugs`, `domain-modeling`, `codebase-design`, `prototype` — see CROSSWALK.md. |
 | **`templates/`** | `pr-template.md` (the intent-first PR body with runnable-evidence accountability) + `issue-tracker.template.md` (states, labels, your human-approval gate). |
 | **`CROSSWALK.md`** | Intent → skill router + the full provenance of what we took, patched, and wrote ourselves. |
@@ -57,15 +58,22 @@ files are instruction documents any agent can follow. No Claude-specific depende
 
 ## Credits
 
-**Matt Pocock** — the pipeline skills in this pack are built on his
-[mattpocock/skills](https://github.com/mattpocock/skills) (MIT). Three of his skills are patched
+**Matt Pocock** — the pipeline skills in this pack are built on
+[mattpocock/skills](https://github.com/mattpocock/skills) (MIT). Three of those skills are patched
 here (`implement`, `resolving-merge-conflicts`, `triage` → `sdlc-implement`, `sdlc-merge-resolve`,
 `sdlc-triage`); ten more are recommended **adopted unchanged** — see CROSSWALK.md for the complete,
-explicit list of what we took and what we changed. His work carries the foundation; our patches
+explicit list of what we took and what we changed. Matt Pocock's work carries the foundation; our patches
 are marked and traceable.
+
+**Lauren Tan (poteto)** — five skills in this pack are adapted from Lauren Tan's
+[pstack](https://github.com/cursor/plugins/tree/main/pstack) (MIT): `how`, `why`, `blast-radius`,
+`watch-pr`, `show-me-your-work` → `sdlc-code-how`, `sdlc-code-why`, `sdlc-blast-radius`,
+`sdlc-watch-pr`, `sdlc-show-me-your-work`. Each carries the original MIT license as `LICENSE.pstack` and a
+Provenance section saying what we changed.
 
 **Productize.life** — registry design, patched skills, templates, and this packaging.
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Portions derived from mattpocock/skills © Matt Pocock, MIT.
+MIT — see [LICENSE](LICENSE). Portions derived from mattpocock/skills © Matt Pocock, MIT, and from
+pstack © Lauren Tan, MIT.

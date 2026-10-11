@@ -7,7 +7,7 @@ Upstream moves; here is how to stay honest about drift.
 
 | Kind | What moves | Where it bites |
 |---|---|---|
-| Upstream released a new version | his skills change under your patches | your patch silently reverts, or your drift log rots |
+| Upstream released a new version | upstream skills change under your patches | your patch silently reverts, or your drift log rots |
 | You improved a patched skill | your patch gets better | the registry + CROSSWALK must record it same-turn |
 | Upstream absorbed your patch | the reason for the patch disappears | retire the patch back to upstream-as-is |
 

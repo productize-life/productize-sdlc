@@ -1,0 +1,4 @@
+node_modules/
+.tmp/
+.bun-cache/
+.watch-pr-install-key

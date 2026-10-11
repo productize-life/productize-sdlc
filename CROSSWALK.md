@@ -19,13 +19,22 @@ Two tables: (1) **intent → skill** — what to reach for, and how the skills c
 | "Design the module interface / seams" | upstream `codebase-design` (adopt as-is) |
 | "Plan this huge foggy effort" | upstream `wayfinder` (adopt as-is) |
 | "Review the diff against standards/spec" | upstream `code-review` (adopt as-is) |
+| "How does this code work?" / before changing a subsystem | `sdlc-code-how` |
+| "Why is it built this way?" / history of a decision | `sdlc-code-why` |
+| "What could this fix break?" / after a fix is chosen | `sdlc-blast-radius` |
+| "Is the PR green / ready?" / after opening it | `sdlc-watch-pr` |
+| "Log your decisions" / unattended or multi-phase run | `sdlc-show-me-your-work` |
 
 ## The chain (how a feature walks through)
 
 ```
-grilling (with the human) → to-spec / your spec skill → to-tickets → sdlc-implement + tdd
-  per ticket (fresh context each, seams in the brief) → code-review + a second-engine review → PR
+grilling (with the human) → to-spec / your spec skill → to-tickets (sdlc-triage writes the seams)
+  → sdlc-code-how before touching unfamiliar code → sdlc-implement + tdd per ticket
+  (fresh context each, seams in the brief) → sdlc-blast-radius on the chosen change
+  → code-review + a second-engine review → sdlc-pr → sdlc-watch-pr to a verdict → human merge
 ```
+
+Long or unattended runs keep a trail with `sdlc-show-me-your-work` the whole way.
 
 On-ramps: `sdlc-triage` (incoming issues), `wayfinder` (big foggy efforts → then to-spec),
 `diagnosing-bugs` (something broken). Vocabulary layer underneath everything:
@@ -36,7 +45,7 @@ On-ramps: `sdlc-triage` (incoming issues), `wayfinder` (big foggy efforts → th
 Upstream: [mattpocock/skills](https://github.com/mattpocock/skills) — Matt Pocock's engineering
 skills, MIT licensed. Verified against upstream commit `2ab9580` (2026-07-28) on 2026-08-03.
 
-**Adopt as-is (install his plugin, use unchanged):** `to-tickets`, `tdd`, `grilling` (+ `grill-me`,
+**Adopt as-is (install the upstream plugin, use unchanged):** `to-tickets`, `tdd`, `grilling` (+ `grill-me`,
 `grill-with-docs` wrappers), `research`, `codebase-design`, `wayfinder`, `code-review`,
 `diagnosing-bugs`, `domain-modeling`, `prototype`.
 
@@ -51,6 +60,23 @@ skills, MIT licensed. Verified against upstream commit `2ab9580` (2026-07-28) on
 **Not adopted, and why:** `setup-matt-pocock-skills` (writes config into your repo and edits
 CLAUDE.md — we hand-write `docs/agents/issue-tracker.md` instead, advisory only) · `ask-matt`
 (router — this CROSSWALK fills that role).
+
+**Adapted from [pstack](https://github.com/cursor/plugins/tree/main/pstack)** by Lauren Tan
+(poteto), MIT, at v0.15.15 (`ccb5507`), via the harness-neutral mirror `backnotprop/pstack`:
+
+| This pack | pstack skill | What we changed |
+|---|---|---|
+| `sdlc-code-how` | `how` | Renamed so it does not catch plain "how do I…" chat; Cursor-only model routing removed. |
+| `sdlc-code-why` | `why` | Renamed; source adapters kept generic (git, tracker, postmortems; chat and observability only when connected). |
+| `sdlc-blast-radius` | `blast-radius` | Triggers tightened around `diagnosing-bugs` and this pack's skills; pstack-only references removed. |
+| `sdlc-watch-pr` | `watch-pr` | Advisory verdict only: never merges, arms auto-merge, rebases or force-pushes. CLI and its tests kept unchanged. |
+| `sdlc-show-me-your-work` | `show-me-your-work` | Cross-family reviewer named per harness; added: no secret values in evidence, and a gate reported as passing needs a row showing it was made to go red first. |
+
+Upstream pstack stays canonical for these five: when it moves, diff the new release against the
+pinned ref above and carry real fixes over, the same way as the Pocock patches.
+
+In 0.3.0, `sdlc-triage` also gained a mandatory **Seams** section on `ready-for-agent` briefs, and
+`sdlc-review` gained **Step 0**: prove the reviewer's tree runs its own tests before reviewing.
 
 ## 3. Ours — grown in a private fleet lab, no upstream
 

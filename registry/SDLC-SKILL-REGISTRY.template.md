@@ -42,19 +42,24 @@ Suggested starter mapping if you install the `productize-sdlc` pack (edit to you
 | Requirements — synthesis | `to-spec` | pocock | 🟢 | synthesis of an existing conversation |
 | Spec review | `sdlc-spec` Mode 2 | pack | 🟩 | |
 | Domain modelling | `sdlc-ddd` | pack | 🟩 | coach style; persists CONTEXT.md |
+| Understand existing code (how it works) | `sdlc-code-how` | pack (pstack, MIT) | 🟩 | cited walkthrough before you change anything; new in 0.3.0 |
+| Understand existing code (why it is this way) | `sdlc-code-why` | pack (pstack, MIT) | 🟩 | cited rationale from git, tracker, postmortems; new in 0.3.0 |
 | Design decisions (ADR) | `sdlc-adr` + `sdlc-pe-review` | pack | 🟩 | write + PM-language review |
 | Grilling (sharpen plan/design) | `grilling` | pocock | 🟢 | human-in-loop only |
 | Big-effort planning | `wayfinder` | pocock | 🟢 | |
 | Breakdown → tickets | `to-tickets` | pocock | 🟢 | |
 | Triage | `sdlc-triage` | pack | 🔧 | tracker-first patch of pocock `triage` |
 | Implement | `sdlc-implement` | pack | 🔧 | branch-first/seams patch of pocock `implement` |
-| TDD loop | `tdd` | pocock | 🟢 | seams arrive via the spec appendix |
+| TDD loop | `tdd` | pocock | 🟢 | seams arrive via the spec appendix or the triage brief |
 | Test design from AC | `sdlc-qe` | pack | 🟩 | quadrants + vacuous-audit |
 | Bug diagnosis | `diagnosing-bugs` | pocock | 🟢 | |
+| Fix safety (after a fix is chosen) | `sdlc-blast-radius` | pack (pstack, MIT) | 🟩 | check the one "safe because" fact by running code; new in 0.3.0 |
 | Research | `research` | pocock | 🟢 | |
 | Code review | `sdlc-review` (+ `code-review` lens) | pack+pocock | 🟩/🟢 | 2nd engine ≠ maker engine |
 | Merge conflicts | `sdlc-merge-resolve` | pack | 🔧 | abort-and-escalate patch |
 | PR / release | `sdlc-pr` | pack | 🟩 | template in `templates/pr-template.md` |
+| PR — watch to a verdict (after open) | `sdlc-watch-pr` | pack (pstack, MIT) | 🟩 | readiness verdict only; never merges; new in 0.3.0 |
+| Decision trail for unattended / multi-phase runs | `sdlc-show-me-your-work` | pack (pstack, MIT) | 🟩 | append-only TSV + cross-family review of the trail; new in 0.3.0 |
 | Deploy / publish | {your deploy skills} | you | — | not shipped in the pack |
 | Handoff / continuity | {write-handoff, verify-claims} | starter-fleet-kit | 🟢 | sibling kit in this org |
 
