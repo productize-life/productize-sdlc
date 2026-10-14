@@ -21,6 +21,8 @@ Two tables: (1) **intent → skill** — what to reach for, and how the skills c
 | "Second-engine review before merge" | `sdlc-review` |
 | "Open the PR" | `sdlc-pr` (body in `templates/pr-template.md`) |
 | "Implement this ticket / spec" | `sdlc-implement` (needs seams in the brief) |
+| "Plan the implementation first, don't touch code yet" | `sdlc-implement --plan` |
+| "Build from the plan I approved" | `sdlc-implement --from-plan <ref>` (red tests first) |
 | "Merge conflict / rebase stuck" | `sdlc-merge-resolve` |
 | "What needs attention? / triage this issue" | `sdlc-triage` |
 | "Break this plan into tickets" | upstream `to-tickets` (adopt as-is) |

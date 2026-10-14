@@ -50,7 +50,7 @@ Suggested starter mapping if you install the `productize-sdlc` pack (edit to you
 | Big-effort planning | `wayfinder` | pocock | 🟢 | |
 | Breakdown → tickets | `to-tickets` | pocock | 🟢 | |
 | Triage | `sdlc-triage` | pack | 🔧 | tracker-first patch of pocock `triage` |
-| Implement | `sdlc-implement` | pack | 🔧 | branch-first/seams patch of pocock `implement` |
+| Implement | `sdlc-implement` | pack | 🔧 | branch-first/seams patch of pocock `implement`; `--plan` = plan only, no source edits; `--from-plan` = build from it, red first |
 | TDD loop | `tdd` | pocock | 🟢 | seams arrive via the spec appendix or the triage brief |
 | Test design from AC | `sdlc-qe` | pack | 🟩 | quadrants + vacuous-audit |
 | Bug diagnosis | `diagnosing-bugs` | pocock | 🟢 | |
