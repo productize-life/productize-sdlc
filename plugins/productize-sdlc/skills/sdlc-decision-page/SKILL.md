@@ -40,9 +40,10 @@ and the evidence behind it.
    Set `"example": false` and set the required `meta.id` to a stable, unique decision id. Inside
    JSON strings, write `<` as `\u003c`, `>` as `\u003e`, and `&` as `\u0026` so pasted titles,
    logs and notes cannot close the JSON script block. Statuses: `pass`, `fail`, `wait`, `warn`,
-   `decoy-red`; every `decoy-red` row must include `raw`. Optional: set `meta.diff` to the raw
-   diff link and `independent_summary` to `{model, text}` when a different reviewer/model supplied
-   the owner-facing summary. Before publishing, run
+   `decoy-red`; every `decoy-red` row must include `raw`. Every question must have at least one
+   option, and every dissent item must carry an explicit `resolved: true` or `resolved: false`.
+   Optional: set `meta.diff` to the raw diff link and `independent_summary` to `{model, text}` when
+   a different reviewer/model supplied the owner-facing summary. Before publishing, run
    `node scripts/check-decision-page.cjs --validate decision-page.html`.
 7. **Publish privately and send the link when the gate opens**, in the same step that starts
    watching for the owner's action: the team's channel from the registry, plus the PR body.
@@ -61,25 +62,34 @@ review but still has decisions only the owner can make.
      alone invites a rubber stamp; the reason and the counter-case keep the owner deciding.
 2. Answers are stored where the agent can read them: on a claude.ai Artifact with the `db` and
    `user` capabilities declared (`const db = await claude.use("db")`;
-   `const user = await claude.use("user")`), in collections `answers` and `handoff`. Send is enabled
-   in db mode only when `await user.isOwner()` is true; the submission records `by: await user.id()`.
-   Elsewhere the page keeps answers in the browser, shows that the agent cannot see them, and offers
-   **Copy answers to send**; the owner pastes them where the agent reads replies.
-3. Compute `qsVersion` as the hash of all current question ids, titles, and option values at render
-   time. Every stored answer and `handoff/submission` carries `decisionId` and `qsVersion`, so changed
-   questions require a fresh answer instead of reusing stale consent. The pickup agent must recompute
-   the current page's `qsVersion` before acting; if `handoff/submission.qsVersion` differs, reject the
-   submission and write the rejection to `handoff/agent` so the page says the questions changed.
-4. **The trigger is the owner's Send button** (`handoff/submission`), never a chat message saying
-   "done". Before writing `handoff/submission`, the page re-reads `handoff/submission` and
-   `handoff/agent`; it refuses instead of overwriting when the stored submission has a different
-   `qsVersion` or `handoff/agent.state` is not `done`. Whatever picks up the submission (a watcher, a
-   no-model scheduled check, a connector), it writes `handoff/agent` back in three steps, so the owner
-   sees it from the page:
+   `const user = await claude.use("user")`), under per-decision collection paths:
+   `answers/{decisionId}/{questionId}` for answers and `handoff/{decisionId}/submission` plus
+   `handoff/{decisionId}/agent` for handoff state. Send is enabled in db mode only when
+   `await user.isOwner()` is true; the submission records `by: await user.id()`.
+3. If the db is unavailable, this is an explicit degraded **copy mode**. The page shows why the db
+   is unavailable (`no host`, missing capability, or the returned error code), keeps answers in the
+   browser, and offers **Copy answers to send**. The copied payload includes `decisionId`,
+   `qsVersion`, the current answers, and the owner id when the host exposes one. In this mode the
+   owner's paste is the trigger; the db-mode owner check and stale-tab guarantees do not apply.
+4. Compute `qsVersion` as the hash of what the owner read for every question: id, title, context,
+   every option's value and label, the recommended option's `why`, and
+   `strongest_alternative: {v, why}`. Every stored answer and `handoff/{decisionId}/submission`
+   carries `decisionId` and `qsVersion`, so changed questions require a fresh answer instead of
+   reusing stale consent. The pickup agent must recompute the current page's `qsVersion` before
+   acting; for every answer and for the submission, reject if either `decisionId` or `qsVersion`
+   differs from the current page. Write the rejection to `handoff/{decisionId}/agent` so the page says
+   the questions changed.
+5. **The trigger is the owner's Send button** (`handoff/{decisionId}/submission`), never a chat
+   message saying "done". Before writing `handoff/{decisionId}/submission`, the page re-reads
+   `handoff/{decisionId}/submission` and `handoff/{decisionId}/agent`; it refuses instead of
+   overwriting when the stored submission has a different `qsVersion` or
+   `handoff/{decisionId}/agent.state` is not `done`. Whatever picks up the submission (a watcher, a
+   no-model scheduled check, a connector), it writes `handoff/{decisionId}/agent` back in three steps,
+   so the owner sees it from the page:
    - `received` + `receivedAt`
    - `handed-off` + `handedOff` (what was passed on, and to whom). This is not "finished".
    - `done` + `result` (links to what changed, and the check that proves it).
-5. Record the answers verbatim in the requirement (ledger, spec, ticket) before acting on them.
+6. Record the answers verbatim in the requirement (ledger, spec, ticket) before acting on them.
 
 ## Delivery and pickup, cost-ordered
 

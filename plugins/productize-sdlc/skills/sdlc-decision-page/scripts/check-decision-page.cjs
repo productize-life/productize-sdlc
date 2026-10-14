@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const { spawnSync } = require("node:child_process");
 const vm = require("node:vm");
 
 const args = process.argv.slice(2);
@@ -29,16 +32,22 @@ function pathLabel(parts) {
 
 function validateDecision(data) {
   const errors = [];
+  if (data && data.example === true) errors.push("example must be false");
+  if (!String(data?.meta?.id || "").trim()) errors.push("empty meta.id");
   for (const [i, row] of (data.evidence || []).entries()) {
     if (row && row.status === "decoy-red" && !row.raw) errors.push(`decoy-red row without raw at evidence[${i}]`);
   }
   for (const [i, q] of (data.questions || []).entries()) {
+    if (!Array.isArray(q.options) || q.options.length === 0) errors.push(`empty options at questions[${i}]`);
     const recs = (q.options || []).filter((o) => o && o.rec);
     for (const rec of recs) {
       const alt = q.strongest_alternative;
       const altOpt = alt && (q.options || []).find((o) => o && o.v === alt.v && !o.rec);
       if (!rec.why || !alt || !alt.why || !altOpt) errors.push(`rec without why/strongest_alternative at questions[${i}]`);
     }
+  }
+  for (const [i, item] of (data.dissent || []).entries()) {
+    if (!item || typeof item.resolved !== "boolean") errors.push(`dissent without explicit resolved boolean at dissent[${i}]`);
   }
   function walk(value, parts = []) {
     if (!value || typeof value !== "object") return;
@@ -100,12 +109,22 @@ function hashString(s) {
   return (h >>> 0).toString(16).padStart(8, "0");
 }
 
+function questionShape(q) {
+  return [
+    String(q.id || ""),
+    String(q.title || ""),
+    String(q.context || ""),
+    (q.options || []).map((o) => [String(o.v ?? ""), String(o.label ?? ""), o.rec === true ? String(o.why ?? "") : null]),
+    q.strongest_alternative ? [String(q.strongest_alternative.v ?? ""), String(q.strongest_alternative.why ?? "")] : null
+  ];
+}
+
 function hashQuestion(q) {
-  return hashString(JSON.stringify([q.id || "", q.title || "", (q.options || []).map((o) => String(o.v ?? ""))]));
+  return hashString(JSON.stringify(questionShape(q)));
 }
 
 function hashQuestions(qs) {
-  return hashString(JSON.stringify((qs || []).map((q) => [String(q.id || ""), String(q.title || ""), (q.options || []).map((o) => String(o.v ?? ""))])));
+  return hashString(JSON.stringify((qs || []).map(questionShape)));
 }
 
 function answerRows(data, qsVersion = hashQuestions(data.questions)) {
@@ -158,10 +177,13 @@ function makeDb(initial = {}) {
   };
 }
 
-function makeClaude({ db = null, owner = true, userId = "owner-1" } = {}) {
+function makeClaude({ db = null, owner = true, userId = "owner-1", dbError = null } = {}) {
   return {
     async use(name) {
-      if (name === "db") return db;
+      if (name === "db") {
+        if (dbError) throw dbError;
+        return db;
+      }
       if (name === "user") return {
         async isOwner() { return owner; },
         async id() { return userId; }
@@ -170,6 +192,9 @@ function makeClaude({ db = null, owner = true, userId = "owner-1" } = {}) {
     }
   };
 }
+
+const answerCollection = (decisionId) => `answers/${decisionId || "missing-decision-id"}`;
+const handoffCollection = (decisionId) => `handoff/${decisionId || "missing-decision-id"}`;
 
 async function render(data, store = {}, options = {}) {
   const elements = new Map();
@@ -261,6 +286,25 @@ function count(haystack, needle) {
   return (haystack.match(new RegExp(needle, "g")) || []).length;
 }
 
+function htmlWithDecision(data) {
+  if (!/<script\s+type="application\/json"\s+id="decision">/.test(html)) return safeJson(data);
+  return html.replace(
+    /(<script\s+type="application\/json"\s+id="decision">)([\s\S]*?)(<\/script>)/,
+    (_, start, __, end) => start + "\n" + safeJson(data) + "\n" + end
+  );
+}
+
+function validateExitsOne(name, mutate) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "decision-page-"));
+  const target = path.join(dir, `${name}.html`);
+  const data = structuredClone(example);
+  mutate(data);
+  fs.writeFileSync(target, htmlWithDecision(data));
+  const result = spawnSync(process.execPath, [__filename, "--validate", target], { encoding: "utf8" });
+  fs.rmSync(dir, { recursive: true, force: true });
+  return result.status === 1;
+}
+
 (async () => {
   const rendered = await render(example);
   const rootHtml = rendered.root.innerHTML;
@@ -268,12 +312,17 @@ function count(haystack, needle) {
   const blockersIndex = rootHtml.indexOf('id="acceptance-blockers"');
   const ctaIndex = rootHtml.indexOf('data-role="cta"');
   const questionForms = count(qsHtml, "<form\\b");
+  const blockerLines = count(rootHtml, '<details class="blocker-line"');
+  const expectedBlockers = (example.dissent || []).filter((x) => x.resolved !== true).length
+    + (example.evidence || []).filter((e) => e && (e.self_reported === true || e.selfReported === true || /self[-\s]?reported/i.test(String(e.note || "")))).length
+    + (example.open || []).length;
 
   console.log("viewport: iphone-12-mini-390x844");
   console.log("section count:", count(rootHtml, "<section\\b"));
   console.log("blockers index:", blockersIndex);
   console.log("cta index:", ctaIndex);
   console.log("blockers before CTA:", blockersIndex >= 0 && ctaIndex >= 0 && blockersIndex < ctaIndex);
+  console.log("blockers one line per blocker:", blockerLines === expectedBlockers);
   console.log("question forms count:", questionForms);
 
   const injected = structuredClone(example);
@@ -308,6 +357,24 @@ function count(haystack, needle) {
   console.log("negative stale answer notice:", staleRender.qs.innerHTML.includes("needs a new answer"));
   console.log("negative stale send disabled:", staleRender.send.disabled === true);
 
+  const recWhy = structuredClone(example);
+  const recWhyStore = {};
+  const recWhyVersion = hashQuestions(recWhy.questions);
+  recWhyStore[`decision-answers:${recWhy.meta.id}`] = JSON.stringify({
+    [recWhy.questions[0].id]: {
+      decisionId: recWhy.meta.id,
+      qsVersion: recWhyVersion,
+      questionHash: hashQuestion(recWhy.questions[0]),
+      choice: recWhy.questions[0].options[0].v,
+      note: "",
+      answeredAt: "2026-10-14T00:00:00.000Z"
+    }
+  });
+  recWhy.questions[0].options[0].why = recWhy.questions[0].options[0].why + " Extra scrutiny added.";
+  const recWhyRender = await render(recWhy, recWhyStore);
+  const recWhyStale = recWhyRender.qs.innerHTML.includes("needs a new answer") && recWhyRender.send.disabled === true;
+  console.log("negative rec.why changes qsVersion and stales answer:", recWhyStale);
+
   const missingRaw = structuredClone(example);
   const decoy = missingRaw.evidence.find((row) => row.status === "decoy-red");
   delete decoy.raw;
@@ -326,7 +393,7 @@ function count(haystack, needle) {
   const currentQsVersion = hashQuestions(example.questions);
   const currentAnswers = answerRows(example, currentQsVersion);
 
-  const nonOwnerDb = makeDb({ answers: currentAnswers });
+  const nonOwnerDb = makeDb({ [answerCollection(example.meta.id)]: currentAnswers });
   const nonOwnerRender = await render(example, {}, { claude: makeClaude({ db: nonOwnerDb, owner: false }) });
   const nonOwnerOk = nonOwnerRender.send.disabled === true
     && nonOwnerRender.modeBanner.innerHTML.includes("Only the owner can send answers.")
@@ -334,8 +401,8 @@ function count(haystack, needle) {
   console.log("negative non-owner viewer send disabled + read-only text:", nonOwnerOk);
 
   const staleSubmissionDb = makeDb({
-    answers: currentAnswers,
-    handoff: {
+    [answerCollection(example.meta.id)]: currentAnswers,
+    [handoffCollection(example.meta.id)]: {
       submission: { decisionId: example.meta.id, qsVersion: "00000000", status: "submitted", at: "2026-10-14T00:00:00.000Z" },
       agent: { decisionId: example.meta.id, state: "done", result: "old done" }
     }
@@ -348,8 +415,8 @@ function count(haystack, needle) {
   console.log("negative stale submission no write:", staleSubmissionNoWrite);
 
   const handedOffDb = makeDb({
-    answers: currentAnswers,
-    handoff: {
+    [answerCollection(example.meta.id)]: currentAnswers,
+    [handoffCollection(example.meta.id)]: {
       submission: { decisionId: example.meta.id, qsVersion: currentQsVersion, status: "submitted", at: "2026-10-14T00:00:00.000Z" },
       agent: { decisionId: example.meta.id, state: "handed-off", handedOff: "owner answers queued" }
     }
@@ -360,6 +427,21 @@ function count(haystack, needle) {
   const handedOffNoWrite = handedOffDb.writes.length === 0;
   console.log("negative agent handed-off refusal:", handedOffRefusal);
   console.log("negative agent handed-off no write:", handedOffNoWrite);
+
+  const otherDecisionId = example.meta.id + "-other";
+  const otherDecisionDb = makeDb({
+    [answerCollection(example.meta.id)]: currentAnswers,
+    [handoffCollection(otherDecisionId)]: {
+      submission: { decisionId: otherDecisionId, qsVersion: currentQsVersion, status: "submitted", at: "2026-10-14T00:00:00.000Z" },
+      agent: { decisionId: otherDecisionId, state: "done", result: "other done" }
+    }
+  });
+  const otherDecisionRender = await render(example, {}, { claude: makeClaude({ db: otherDecisionDb, owner: true }) });
+  await otherDecisionRender.send.listeners.click();
+  const otherDecisionIgnored = !otherDecisionRender.handoff.innerHTML.includes("other done")
+    && otherDecisionDb.writes.some((w) => w.collection === handoffCollection(example.meta.id) && w.id === "submission")
+    && !otherDecisionDb.writes.some((w) => w.collection === handoffCollection(otherDecisionId));
+  console.log("negative other decisionId submission ignored:", otherDecisionIgnored);
 
   const browserStore = {};
   browserStore[`decision-answers:${example.meta.id}`] = JSON.stringify(currentAnswers);
@@ -374,13 +456,39 @@ function count(haystack, needle) {
     browserRender.modeBanner.innerHTML
   ].join(" ");
   const browserBanner = browserRender.modeBanner.innerHTML.includes("The agent cannot see answers on this page. Use Copy and send them where the agent reads.");
+  const browserReason = browserRender.modeBanner.innerHTML.includes("no host");
   const browserNoSent = !/\bSent\b/.test(browserText);
+  const browserPayload = JSON.parse(browserRender.clipboard.text);
+  const browserPayloadHasVersion = browserPayload.decisionId === example.meta.id && browserPayload.qsVersion === currentQsVersion;
   console.log("negative browser-only blocking banner:", browserBanner);
+  console.log("copy-mode no-host reason shown:", browserReason);
   console.log("negative browser-only no Sent text after send:", browserNoSent);
+  console.log("copy-mode payload contains decisionId and qsVersion:", browserPayloadHasVersion);
+
+  const dbDenied = new Error("db capability denied");
+  dbDenied.code = "permission-denied";
+  const copyReasonRender = await render(example, browserStore, { claude: makeClaude({ dbError: dbDenied, userId: "owner-copy" }) });
+  const copyReason = copyReasonRender.modeBanner.innerHTML.includes("capability not granted: db")
+    && copyReasonRender.modeBanner.innerHTML.includes("code permission-denied");
+  await copyReasonRender.send.listeners.click();
+  const ownerPayload = JSON.parse(copyReasonRender.clipboard.text);
+  const copyOwner = ownerPayload.ownerId === "owner-copy";
+  console.log("copy-mode shows db unavailable reason:", copyReason);
+  console.log("copy-mode payload contains owner id when known:", copyOwner);
+
+  const validateEmptyOptions = validateExitsOne("empty-options", (data) => { data.questions[0].options = []; });
+  const validateExample = validateExitsOne("example-true", (data) => { data.example = true; });
+  const validateMetaId = validateExitsOne("empty-meta-id", (data) => { data.meta.id = ""; });
+  const validateDissentResolved = validateExitsOne("dissent-without-resolved", (data) => { delete data.dissent[0].resolved; });
+  console.log("negative validate empty options exits 1:", validateEmptyOptions);
+  console.log("negative validate example true exits 1:", validateExample);
+  console.log("negative validate empty meta.id exits 1:", validateMetaId);
+  console.log("negative validate dissent without resolved exits 1:", validateDissentResolved);
 
   const ok = blockersIndex >= 0
     && ctaIndex >= 0
     && blockersIndex < ctaIndex
+    && blockerLines === expectedBlockers
     && questionForms === example.questions.length
     && injectedHtml.includes("&lt;/script&gt;&lt;img src=x onerror=alert(1)&gt;")
     && !injectedHtml.includes("<img")
@@ -390,14 +498,24 @@ function count(haystack, needle) {
     && !/href="javascript:/i.test(badLinkHtml)
     && staleRender.qs.innerHTML.includes("needs a new answer")
     && staleRender.send.disabled === true
+    && recWhyStale
     && missingRawHtml.includes("Missing raw evidence for decoy-red row.")
     && nonOwnerOk
     && staleSubmissionRefusal
     && staleSubmissionNoWrite
     && handedOffRefusal
     && handedOffNoWrite
+    && otherDecisionIgnored
     && browserBanner
-    && browserNoSent;
+    && browserReason
+    && browserNoSent
+    && browserPayloadHasVersion
+    && copyReason
+    && copyOwner
+    && validateEmptyOptions
+    && validateExample
+    && validateMetaId
+    && validateDissentResolved;
 
   if (!ok) {
     process.exitCode = 1;

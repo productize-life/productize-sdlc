@@ -3,7 +3,7 @@
   Fill ONLY the JSON block below (id="decision"); the markup renders from it. Inside JSON strings,
   write < as \u003c, > as \u003e, and & as \u0026. Every `href` must resolve at the ref you
   name in `meta.ref` before you send the link (see SKILL.md, step 5).
-  Example content below is marked `example: true`; replace all of it.
+  For real pages, replace this fixture content and keep `example: false`; --validate rejects true.
 -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Decision page</title>
@@ -59,8 +59,8 @@
     { "test": "Decoy: without --plan", "expect": "Creates a branch and a commit (proves the check can fail)", "status": "decoy-red", "raw": "branch=feat/no-plan · commits=1 · gate correctly failed" }
   ],
   "dissent": [
-    { "question": "Keep --plan or drop it?", "verdict": "Kept; the minority's red-tests-first idea became the build run's entry gate.", "flip": true },
-    { "question": "Where does the plan live?", "verdict": "Tracker comment if there is one, else an untracked plans/ file." }
+    { "question": "Keep --plan or drop it?", "verdict": "Kept; the minority's red-tests-first idea became the build run's entry gate.", "flip": true, "resolved": true },
+    { "question": "Where does the plan live?", "verdict": "Tracker comment if there is one, else an untracked plans/ file.", "resolved": false }
   ],
   "open": ["What “approved” means mechanically", "How --plan composes with an existing branch"],
   "questions": [
@@ -74,7 +74,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: one narrow column, read top-down: blockers, the ask, the PRD trace, gates, before/after, evidence, dissent. */
+/* Layout: one narrow column, read top-down: the ask, blockers, PRD trace, gates, before/after, evidence, dissent. */
 :root {
   --bg: #f6f7f5; --surface: #ffffff; --ink: #1d2421; --muted: #5d6a64; --line: #d9dfdb; --accent: #2f5d50;
   --ok: #2e7d4f; --ok-bg: #e4f2e9; --warn: #9a6a00; --warn-bg: #fbf1d8; --bad: #b23b2e; --bad-bg: #f8e3e0;
@@ -104,7 +104,14 @@ section { display: grid; gap: 14px; min-width: 0; }
 .banner { background: var(--warn-bg); color: var(--warn); border-radius: 8px; padding: 8px 12px; font-size: 0.9rem; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
 .ask { padding: 22px; display: grid; gap: 14px; }
+.ask-line { font-size: 1.05rem; font-weight: 600; }
 .blockers { border-color: var(--warn); }
+.blocker-stack { display: grid; gap: 8px; }
+.blocker-stack > p { margin: 0; }
+.blocker-line { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--bg); }
+.blocker-line summary { cursor: pointer; font-weight: 600; }
+.blocker-line summary::marker { color: var(--warn); }
+.blocker-line p { margin-top: 6px; }
 .who { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--wait); }
 .dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
 .cta { justify-self: start; background: var(--accent); color: var(--bg); text-decoration: none; font-weight: 600; padding: 10px 18px; border-radius: 8px; }
@@ -125,13 +132,23 @@ ul.plain { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; }
 .p-wait { background: var(--wait-bg); color: var(--wait); } .p-warn { background: var(--warn-bg); color: var(--warn); }
 .p-decoy { background: var(--decoy-bg); color: var(--decoy); }
 .ba { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } .ba > div { padding: 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
-.tbl { overflow-x: auto; } table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 0.93rem; }
+.tbl { overflow-x: visible; } table { border-collapse: collapse; width: 100%; min-width: 0; font-size: 0.93rem; }
 th, td { text-align: left; padding: 10px 14px; vertical-align: top; border-bottom: 1px solid var(--line); } tr:last-child td { border-bottom: 0; }
 th { font-weight: 600; color: var(--muted); font-size: 0.82rem; }
 .d { border-left: 3px solid var(--line); padding: 2px 0 2px 14px; display: grid; gap: 4px; } .d.flip { border-left-color: var(--warn); }
 .open { background: var(--warn-bg); border-radius: 10px; padding: 16px; display: grid; gap: 8px; }
 footer { color: var(--muted); font-size: 0.85rem; }
-@media (max-width: 560px) { .ba { grid-template-columns: 1fr; } .trace > li { grid-template-columns: 1fr; gap: 4px; } }
+@media (max-width: 560px) {
+  .ba { grid-template-columns: 1fr; }
+  .trace > li { grid-template-columns: 1fr; gap: 4px; }
+  .tbl { background: transparent; border: 0; }
+  .tbl table, .tbl thead, .tbl tbody, .tbl tr, .tbl th, .tbl td { display: block; }
+  .tbl thead { display: none; }
+  .tbl tbody { display: grid; gap: 10px; }
+  .tbl tr { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .tbl td { border-bottom: 0; padding: 4px 0; }
+  .tbl td::before { content: attr(data-label); display: block; color: var(--muted); font-size: 0.78rem; font-weight: 600; }
+}
 </style>
 <div class="wrap" id="root"><p class="muted">Loading decision…</p></div>
 <script>
@@ -173,11 +190,10 @@ footer { color: var(--muted); font-size: 0.85rem; }
   const h = [];
   if (d.example) h.push('<p class="banner">Example content. Replace the JSON block before sending this page.</p>');
   if (!m.id) h.push('<p class="banner">meta.id is required so stored answers cannot carry across decisions.</p>');
-  h.push('<header style="display:grid;gap:10px"><div class="eyebrow">' + esc([m.project, m.item, m.date].filter(Boolean).join(" · ")) + "</div><h1>" + esc(d.title) + '</h1><p class="muted">' + esc(d.subtitle) + "</p></header>");
-  h.push(blockers());
-  if (d.independent_summary || m.diff) h.push(independentSummary());
   const a = d.ask || {};
-  h.push('<section class="card ask" data-section="ask"><span class="who"><span class="dot"></span>Waiting on ' + esc(a.owner) + "</span><h2>" + esc(a.action) + "</h2><p>" + esc(a.why_you) + "</p>" + cta(a.link) + '<p class="muted">If nothing is done: ' + esc(a.if_nothing) + "</p></section>");
+  h.push('<section class="card ask" data-section="ask"><div class="eyebrow">' + esc([m.project, m.item, m.date].filter(Boolean).join(" · ")) + '</div><p class="ask-line"><span class="who"><span class="dot"></span>Waiting on ' + esc(a.owner) + ":</span> " + esc(a.action) + '</p><p class="muted">' + esc(a.why_you) + "</p>" + blockers() + cta(a.link) + '<p class="muted">If nothing is done: ' + esc(a.if_nothing) + "</p></section>");
+  h.push('<header style="display:grid;gap:10px"><h1>' + esc(d.title) + '</h1><p class="muted">' + esc(d.subtitle) + "</p></header>");
+  if (d.independent_summary || m.diff) h.push(independentSummary());
   h.push('<section><h2>PRD summary</h2><ol class="card trace">' + (d.trace || []).map((r) => {
     let body = r.items ? list(r.items) : "<p>" + esc(r.text) + "</p>";
     const src = [r.who ? esc(r.who) : "", link(r.source)].filter(Boolean).join(" · ");
@@ -189,7 +205,7 @@ footer { color: var(--muted); font-size: 0.85rem; }
   h.push('<section><h2>Evidence</h2><div class="card tbl"><table><thead><tr><th>Test</th><th>Expected</th><th>Result</th></tr></thead><tbody>' + (d.evidence || []).map((e) => {
     const raw = e.raw ? '<div class="mono muted">' + esc(e.raw) + "</div>" : "";
     const missingRaw = e.status === "decoy-red" && !e.raw ? '<div class="banner">Missing raw evidence for decoy-red row.</div>' : "";
-    return "<tr><td>" + esc(e.test) + raw + "</td><td>" + esc(e.expect) + "</td><td>" + pill(e.status) + (e.note ? '<span class="pill p-warn">' + esc(e.note) + "</span>" : "") + missingRaw + "</td></tr>";
+    return '<tr><td data-label="Test">' + esc(e.test) + raw + '</td><td data-label="Expected">' + esc(e.expect) + '</td><td data-label="Result">' + pill(e.status) + (e.note ? '<span class="pill p-warn">' + esc(e.note) + "</span>" : "") + missingRaw + "</td></tr>";
   }).join("") + "</tbody></table></div></section>");
   if ((d.dissent || []).length) h.push("<section><h2>Where reviewers disagreed</h2>" + d.dissent.map((x) => '<div class="d' + (x.flip ? " flip" : "") + '"><span style="font-weight:600">' + esc(x.question) + '</span><span class="muted">' + esc(x.verdict) + "</span></div>").join("") + "</section>");
   if ((d.open || []).length) h.push('<section class="open"><div class="eyebrow" style="color:var(--warn)">Still yours to decide</div>' + list(d.open) + "</section>");
@@ -204,12 +220,12 @@ footer { color: var(--muted); font-size: 0.85rem; }
     const unresolved = (d.dissent || []).filter((x) => x.resolved !== true);
     const selfReported = (d.evidence || []).filter(isSelfReported);
     const open = d.open || [];
-    const groups = [];
-    if (unresolved.length) groups.push('<div><div class="eyebrow">Unresolved dissent</div>' + list(unresolved.map((x) => [x.question, x.verdict].filter(Boolean).join(": "))) + "</div>");
-    if (selfReported.length) groups.push('<div><div class="eyebrow">Self-reported evidence</div>' + list(selfReported.map((e) => [e.test, e.note || "self-reported"].filter(Boolean).join(": "))) + "</div>");
-    if (open.length) groups.push('<div><div class="eyebrow">Open items</div>' + list(open) + "</div>");
-    const body = groups.length ? groups.join("") : '<p class="muted">No unresolved dissent, self-reported evidence, or open items were listed.</p>';
-    return '<section id="acceptance-blockers" data-section="blockers" class="card ask blockers"><div class="eyebrow" style="color:var(--warn)">Before you act</div><h2>What you accept by acting</h2>' + body + "</section>";
+    const rows = [];
+    unresolved.forEach((x) => rows.push({ kind: "Unresolved dissent", summary: x.question || "Reviewer dissent is unresolved", detail: x.verdict || "No verdict recorded." }));
+    selfReported.forEach((e) => rows.push({ kind: "Self-reported evidence", summary: e.test || "Evidence row is self-reported", detail: e.note || e.raw || "This result was reported by the agent." }));
+    open.forEach((x) => rows.push({ kind: "Open item", summary: typeof x === "string" ? x : x.title || "Open item", detail: typeof x === "string" ? x : x.detail || x.text || "" }));
+    const body = rows.length ? rows.map((r) => '<details class="blocker-line"><summary>' + esc(r.kind) + ": " + esc(r.summary) + '</summary><p class="muted">' + esc(r.detail || r.summary) + "</p></details>").join("") : '<p class="muted">No unresolved dissent, self-reported evidence, or open items were listed.</p>';
+    return '<div id="acceptance-blockers" data-section="blockers" class="blocker-stack blockers"><div class="eyebrow" style="color:var(--warn)">Before you act</div>' + body + "</div>";
   }
 
   function independentSummary() {
@@ -221,9 +237,10 @@ footer { color: var(--muted); font-size: 0.85rem; }
   }
 
   // Mode 2 (HITL). Storage: the host's shared database when the page runs as a claude.ai Artifact with the
-  // `db` and `user` capabilities (collections "answers" and "handoff"); otherwise this browser only, plus a
-  // copy button so the owner can paste the answers where the agent reads them. The agent writes handoff/agent
-  // with state received → handed-off → done; "handed-off" means the work was passed on, not that it is finished.
+  // `db` and `user` capabilities (collections "answers/{decisionId}" and "handoff/{decisionId}");
+  // otherwise this browser only, plus a copy button so the owner can paste the answers where the agent reads
+  // them. The agent writes handoff/{decisionId}/agent with state received → handed-off → done;
+  // "handed-off" means the work was passed on, not that it is finished.
   // A recommendation never stands alone (owner decision 2026-10-14): the recommended option states why,
   // and the question names the strongest alternative and why someone would pick it. Missing either one
   // renders a visible error instead of a bare "recommended" pill, so the page cannot nudge without arguing.
@@ -236,8 +253,10 @@ footer { color: var(--muted); font-size: 0.85rem; }
     return '<div class="muted" style="display:grid;gap:4px;border-left:3px solid var(--line);padding-left:10px"><span><strong>Recommended because:</strong> ' + esc(rec.why) + '</span><span><strong>Strongest alternative (' + esc(altOpt.label) + '):</strong> ' + esc(alt.why) + "</span></div>";
   }
   function hitl(qs, decisionId) {
-    const answers = {}; let submission = null, agent = null, db = null, user = null, owner = false, userId = "", hostChecked = false;
+    const answers = {}; let submission = null, agent = null, db = null, user = null, owner = false, userId = "", hostChecked = false, dbUnavailable = "";
     const storageKey = "decision-answers:" + (decisionId || "missing-decision-id");
+    const answersCollection = "answers/" + (decisionId || "missing-decision-id");
+    const handoffCollection = "handoff/" + (decisionId || "missing-decision-id");
     const local = { get() { try { return JSON.parse(localStorage.getItem(storageKey) || "{}"); } catch { return {}; } },
                     set(v) { try { localStorage.setItem(storageKey, JSON.stringify(v)); } catch {} } };
     const fmt = (t) => t ? new Date(t).toLocaleString() : "";
@@ -246,9 +265,12 @@ footer { color: var(--muted); font-size: 0.85rem; }
       for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
       return (h >>> 0).toString(16).padStart(8, "0");
     };
-    const questionShape = () => qs.map((q) => [String(q.id || ""), String(q.title || ""), (q.options || []).map((o) => String(o.v ?? ""))]);
+    const optionShape = (o) => [String(o.v ?? ""), String(o.label ?? ""), o.rec === true ? String(o.why ?? "") : null];
+    const alternativeShape = (q) => q.strongest_alternative ? [String(q.strongest_alternative.v ?? ""), String(q.strongest_alternative.why ?? "")] : null;
+    const shapeQuestion = (q) => [String(q.id || ""), String(q.title || ""), String(q.context || ""), (q.options || []).map(optionShape), alternativeShape(q)];
+    const questionShape = () => qs.map(shapeQuestion);
     const qsVersion = hash(JSON.stringify(questionShape()));
-    const questionHash = (q) => hash(JSON.stringify([q.id || "", q.title || "", (q.options || []).map((o) => String(o.v ?? ""))]));
+    const questionHash = (q) => hash(JSON.stringify(shapeQuestion(q)));
     const validAnswer = (q, a) => !!(a && a.choice && a.decisionId === decisionId && a.qsVersion === qsVersion
       && (q.options || []).some((o) => o.v === a.choice));
     const currentAnswers = () => {
@@ -266,11 +288,10 @@ footer { color: var(--muted); font-size: 0.85rem; }
       return snap.data || snap || null;
     };
     async function readHandoffDoc(id) {
-      const ref = db.collection("handoff").doc(id);
+      const ref = db.collection(handoffCollection).doc(id);
       if (!ref || typeof ref.get !== "function") throw new Error("cannot verify current handoff");
       const row = docData(await ref.get());
       if (!row) return null;
-      if (row.decisionId && row.decisionId !== decisionId) return id === "submission" ? { decisionId: row.decisionId, qsVersion: row.qsVersion } : null;
       return row;
     }
     async function refreshHandoff() {
@@ -282,7 +303,7 @@ footer { color: var(--muted); font-size: 0.85rem; }
       const banner = document.getElementById("hitl-mode-banner");
       if (!hostChecked) { banner.innerHTML = ""; return; }
       if (!db) {
-        banner.innerHTML = '<p class="banner">The agent cannot see answers on this page. Use Copy and send them where the agent reads.</p>';
+        banner.innerHTML = '<p class="banner">The agent cannot see answers on this page. Use Copy and send them where the agent reads. Copy mode: database unavailable (' + esc(dbUnavailable || "unknown") + ").</p>";
       } else if (!owner) {
         banner.innerHTML = '<p class="banner">Only the owner can send answers.</p>';
       } else {
@@ -330,7 +351,7 @@ footer { color: var(--muted); font-size: 0.85rem; }
       if (!decisionId) { st.textContent = "Decision id missing"; return; }
       const q = qs.find((x) => x.id === id);
       const row = { decisionId, qsVersion, questionHash: questionHash(q), choice, note: f.querySelector("textarea").value.trim(), answeredAt: new Date().toISOString() };
-      try { if (db) await db.collection("answers").doc(id).set(row); answers[id] = row; if (!db) local.set(answers); draw(); }
+      try { if (db) await db.collection(answersCollection).doc(id).set(row); answers[id] = row; if (!db) local.set(answers); draw(); }
       catch (e) { st.textContent = "Not saved: " + (e?.code || e?.message || e); }
     });
     document.getElementById("send").addEventListener("click", async () => {
@@ -345,29 +366,44 @@ footer { color: var(--muted); font-size: 0.85rem; }
           if (inProgress()) { st.textContent = "This tab is out of date, reload"; draw(); return; }
           const by = user && typeof user.id === "function" ? await user.id() : userId;
           const row = { decisionId, qsVersion, by, status: "submitted", at: new Date().toISOString(), answered: qs.length };
-          await db.collection("handoff").doc("submission").set(row);
+          await db.collection(handoffCollection).doc("submission").set(row);
           submission = row; agent = null; draw();
         } catch (e) { st.textContent = "Not sent: " + (e?.code || e?.message || e); }
         return;
       }
-      const text = JSON.stringify({ decisionId, qsVersion, answers: ready, at: new Date().toISOString() }, null, 2);
+      const payload = { decisionId, qsVersion, answers: ready, at: new Date().toISOString() };
+      if (userId) payload.ownerId = userId;
+      const text = JSON.stringify(payload, null, 2);
       try { await navigator.clipboard.writeText(text); st.textContent = "Copied. Paste it where the agent reads replies."; } catch { st.textContent = text; }
     });
     Object.assign(answers, local.get()); draw();
     (async () => {
-      try { db = window.claude ? await window.claude.use("db") : null; } catch { db = null; }
-      if (db) {
+      const reason = (fallback, e) => [fallback, e?.code ? "code " + e.code : "", e?.message || ""].filter(Boolean).join(": ");
+      if (!window.claude || typeof window.claude.use !== "function") {
+        dbUnavailable = "no host";
+      } else {
+        try {
+          db = await window.claude.use("db");
+          if (!db) dbUnavailable = "capability not granted: db";
+        } catch (e) {
+          db = null;
+          dbUnavailable = reason("capability not granted: db", e);
+        }
         try {
           user = await window.claude.use("user");
-          owner = !!(user && typeof user.isOwner === "function" && await user.isOwner());
-          if (owner && typeof user.id === "function") userId = await user.id();
-        } catch { owner = false; user = null; }
+          if (user && typeof user.id === "function") userId = await user.id();
+          owner = !!(db && user && typeof user.isOwner === "function" && await user.isOwner());
+        } catch (e) {
+          if (db) owner = false;
+          user = null;
+          if (!db && !dbUnavailable) dbUnavailable = reason("capability not granted: user", e);
+        }
       }
       hostChecked = true;
-      document.getElementById("hitl-store").textContent = db ? "Answers are shared with the agent." : "Answers stay in this browser; use Copy to send them.";
+      document.getElementById("hitl-store").textContent = db ? "Answers are shared with the agent." : "Answers stay in this browser; copy mode is active because the database is unavailable (" + (dbUnavailable || "unknown") + ").";
       if (!db) { draw(); return; }
-      db.collection("answers").onSnapshot((s) => { for (const x of s.docs) answers[x.id] = x.data(); draw(); });
-      db.collection("handoff").onSnapshot((s) => { for (const x of s.docs) { const row = x.data(); if (row.decisionId && row.decisionId !== decisionId) continue; if (x.id === "submission") submission = row; if (x.id === "agent") agent = row; } draw(); });
+      db.collection(answersCollection).onSnapshot((s) => { for (const x of s.docs) answers[x.id] = x.data(); draw(); });
+      db.collection(handoffCollection).onSnapshot((s) => { for (const x of s.docs) { const row = x.data(); if (x.id === "submission") submission = row; if (x.id === "agent") agent = row; } draw(); });
       draw();
     })();
   }
