@@ -54,7 +54,11 @@
     { "question": "Keep --plan or drop it?", "verdict": "Kept; the minority's red-tests-first idea became the build run's entry gate.", "flip": true },
     { "question": "Where does the plan live?", "verdict": "Tracker comment if there is one, else an untracked plans/ file." }
   ],
-  "open": ["What “approved” means mechanically", "How --plan composes with an existing branch"]
+  "open": ["What “approved” means mechanically", "How --plan composes with an existing branch"],
+  "questions": [
+    { "id": "q1-approve", "title": "Approve the plan as written?", "context": "Mode 2 (HITL): the owner answers on the page; the agent reads the answers and continues.",
+      "options": [ { "v": "approve", "label": "Approve, build from it", "rec": true }, { "v": "revise", "label": "Revise first (say what in the note)" }, { "v": "not-ready", "label": "Not ready" } ] }
+  ]
 }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -144,8 +148,62 @@ footer { color: var(--muted); font-size: 0.85rem; }
   h.push('<section><h2>Evidence</h2><div class="card tbl"><table><thead><tr><th>Test</th><th>Expected</th><th>Result</th></tr></thead><tbody>' + (d.evidence || []).map((e) => "<tr><td>" + esc(e.test) + (e.raw ? '<div class="mono muted">' + esc(e.raw) + "</div>" : "") + "</td><td>" + esc(e.expect) + "</td><td>" + pill(e.status) + (e.note ? '<span class="pill p-warn">' + esc(e.note) + "</span>" : "") + "</td></tr>").join("") + "</tbody></table></div></section>");
   if ((d.dissent || []).length) h.push("<section><h2>Where reviewers disagreed</h2>" + d.dissent.map((x) => '<div class="d' + (x.flip ? " flip" : "") + '"><span style="font-weight:600">' + esc(x.question) + '</span><span class="muted">' + esc(x.verdict) + "</span></div>").join("") + "</section>");
   if ((d.open || []).length) h.push('<section class="open"><div class="eyebrow" style="color:var(--warn)">Still yours to decide</div>' + list(d.open) + "</section>");
+  if ((d.questions || []).length) h.push('<section id="hitl"><h2>Your answers</h2><p class="muted" id="hitl-store"></p><div id="qs" style="display:grid;gap:14px"></div>'
+    + '<div class="card ask"><button type="button" id="send" class="cta" style="border:0;cursor:pointer" disabled>Send answers</button><p class="muted" id="send-status"></p><ol class="track" id="handoff"></ol></div></section>');
   h.push("<footer>" + esc([m.ref, m.author].filter(Boolean).join(" · ")) + "</footer>");
   root.innerHTML = h.join("");
   if (d.title) document.title = d.title;
+  if ((d.questions || []).length) hitl(d.questions);
+
+  // Mode 2 (HITL). Storage: the host's shared database when the page runs as a claude.ai Artifact with the
+  // `db` capability (collections "answers" and "handoff"); otherwise this browser only, plus a copy button
+  // so the owner can paste the answers where the agent reads them. The agent writes handoff/agent with
+  // state received → handed-off → done; "handed-off" means the work was passed on, not that it is finished.
+  function hitl(qs) {
+    const answers = {}; let submission = null, agent = null, db = null;
+    const local = { get() { try { return JSON.parse(localStorage.getItem("decision-answers") || "{}"); } catch { return {}; } },
+                    set(v) { try { localStorage.setItem("decision-answers", JSON.stringify(v)); } catch {} } };
+    const fmt = (t) => t ? new Date(t).toLocaleString() : "";
+    function draw() {
+      document.getElementById("qs").innerHTML = qs.map((q, i) => {
+        const a = answers[q.id] || {};
+        return '<form class="card ask" data-q="' + esc(q.id) + '"><span class="muted">Question ' + (i + 1) + " of " + qs.length + "</span><h2>" + esc(q.title) + '</h2><p class="muted">' + esc(q.context) + "</p>"
+          + q.options.map((o) => '<label style="display:flex;gap:10px;align-items:flex-start"><input type="radio" name="' + esc(q.id) + '" id="' + esc(q.id + "-" + o.v) + '" value="' + esc(o.v) + '"' + (a.choice === o.v ? " checked" : "") + "><span>" + esc(o.label) + (o.rec ? ' <span class="pill p-pass">recommended</span>' : "") + "</span></label>").join("")
+          + '<textarea id="' + esc(q.id) + '-note" style="width:100%;box-sizing:border-box;min-height:56px;font:inherit;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px" placeholder="Note (optional)">' + esc(a.note || "") + "</textarea>"
+          + '<button type="submit" class="cta" style="border:0;cursor:pointer">Save answer</button><span class="muted" id="' + esc(q.id) + '-st">' + (a.choice ? "Saved " + fmt(a.answeredAt) : "") + "</span></form>";
+      }).join("");
+      const done = qs.filter((q) => answers[q.id]?.choice).length;
+      const send = document.getElementById("send");
+      send.disabled = done < qs.length || (submission && !(agent && agent.state === "done"));
+      send.textContent = db ? "Send answers" : "Copy answers to send";
+      document.getElementById("send-status").textContent = done < qs.length ? (qs.length - done) + " left to answer" : submission ? "Sent " + fmt(submission.at) : "Ready to send";
+      const steps = [["Sent", submission ? fmt(submission.at) : "", !!submission], ["Received", agent?.receivedAt ? fmt(agent.receivedAt) : "", !!agent?.receivedAt],
+        ["Handed off", agent?.handedOff || "", ["handed-off", "done"].includes(agent?.state)], ["Result", agent?.result || "", agent?.state === "done"]];
+      document.getElementById("handoff").innerHTML = steps.map((s, i) => '<li><span class="node ' + (s[2] ? "c-pass" : "c-wait") + '">' + (i + 1) + '</span><div style="display:grid;gap:2px"><span style="font-weight:600">' + s[0] + '</span><span class="muted">' + esc(s[1]) + "</span></div></li>").join("");
+    }
+    document.getElementById("qs").addEventListener("submit", async (ev) => {
+      ev.preventDefault(); const f = ev.target; const id = f.dataset.q;
+      const choice = f.querySelector("input[type=radio]:checked")?.value; const st = document.getElementById(id + "-st");
+      if (!choice) { st.textContent = "Pick an option first"; return; }
+      const row = { choice, note: f.querySelector("textarea").value.trim(), answeredAt: new Date().toISOString() };
+      try { if (db) await db.collection("answers").doc(id).set(row); else { answers[id] = row; local.set(answers); draw(); } }
+      catch (e) { st.textContent = "Not saved: " + (e?.code || e?.message || e); }
+    });
+    document.getElementById("send").addEventListener("click", async () => {
+      const st = document.getElementById("send-status");
+      if (db) { try { await db.collection("handoff").doc("submission").set({ status: "submitted", at: new Date().toISOString(), answered: qs.length }); } catch (e) { st.textContent = "Not sent: " + (e?.code || e?.message || e); } return; }
+      const text = JSON.stringify({ answers, at: new Date().toISOString() }, null, 2);
+      try { await navigator.clipboard.writeText(text); st.textContent = "Copied. Paste it where the agent reads replies."; } catch { st.textContent = text; }
+    });
+    Object.assign(answers, local.get()); draw();
+    (async () => {
+      try { db = window.claude ? await window.claude.use("db") : null; } catch { db = null; }
+      document.getElementById("hitl-store").textContent = db ? "Answers are shared with the agent." : "Answers stay in this browser; use Copy to send them.";
+      if (!db) { draw(); return; }
+      db.collection("answers").onSnapshot((s) => { for (const x of s.docs) answers[x.id] = x.data(); draw(); });
+      db.collection("handoff").onSnapshot((s) => { for (const x of s.docs) { if (x.id === "submission") submission = x.data(); if (x.id === "agent") agent = x.data(); } draw(); });
+      draw();
+    })();
+  }
 })();
 </script>
