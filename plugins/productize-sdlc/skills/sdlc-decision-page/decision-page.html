@@ -193,7 +193,7 @@ footer { color: var(--muted); font-size: 0.85rem; }
   }).join("") + "</tbody></table></div></section>");
   if ((d.dissent || []).length) h.push("<section><h2>Where reviewers disagreed</h2>" + d.dissent.map((x) => '<div class="d' + (x.flip ? " flip" : "") + '"><span style="font-weight:600">' + esc(x.question) + '</span><span class="muted">' + esc(x.verdict) + "</span></div>").join("") + "</section>");
   if ((d.open || []).length) h.push('<section class="open"><div class="eyebrow" style="color:var(--warn)">Still yours to decide</div>' + list(d.open) + "</section>");
-  if ((d.questions || []).length) h.push('<section id="hitl"><h2>Your answers</h2><p class="muted" id="hitl-store"></p><div id="qs" style="display:grid;gap:14px"></div>'
+  if ((d.questions || []).length) h.push('<section id="hitl"><h2>Your answers</h2><div id="hitl-mode-banner"></div><p class="muted" id="hitl-store"></p><div id="qs" style="display:grid;gap:14px"></div>'
     + '<div class="card ask"><button type="button" id="send" class="cta" style="border:0;cursor:pointer" disabled>Send answers</button><p class="muted" id="send-status"></p><ol class="track" id="handoff"></ol></div></section>');
   h.push("<footer>" + esc([m.ref, m.author].filter(Boolean).join(" · ")) + "</footer>");
   root.innerHTML = h.join("");
@@ -221,9 +221,9 @@ footer { color: var(--muted); font-size: 0.85rem; }
   }
 
   // Mode 2 (HITL). Storage: the host's shared database when the page runs as a claude.ai Artifact with the
-  // `db` capability (collections "answers" and "handoff"); otherwise this browser only, plus a copy button
-  // so the owner can paste the answers where the agent reads them. The agent writes handoff/agent with
-  // state received → handed-off → done; "handed-off" means the work was passed on, not that it is finished.
+  // `db` and `user` capabilities (collections "answers" and "handoff"); otherwise this browser only, plus a
+  // copy button so the owner can paste the answers where the agent reads them. The agent writes handoff/agent
+  // with state received → handed-off → done; "handed-off" means the work was passed on, not that it is finished.
   // A recommendation never stands alone (owner decision 2026-10-14): the recommended option states why,
   // and the question names the strongest alternative and why someone would pick it. Missing either one
   // renders a visible error instead of a bare "recommended" pill, so the page cannot nudge without arguing.
@@ -236,7 +236,7 @@ footer { color: var(--muted); font-size: 0.85rem; }
     return '<div class="muted" style="display:grid;gap:4px;border-left:3px solid var(--line);padding-left:10px"><span><strong>Recommended because:</strong> ' + esc(rec.why) + '</span><span><strong>Strongest alternative (' + esc(altOpt.label) + '):</strong> ' + esc(alt.why) + "</span></div>";
   }
   function hitl(qs, decisionId) {
-    const answers = {}; let submission = null, agent = null, db = null;
+    const answers = {}; let submission = null, agent = null, db = null, user = null, owner = false, userId = "", hostChecked = false;
     const storageKey = "decision-answers:" + (decisionId || "missing-decision-id");
     const local = { get() { try { return JSON.parse(localStorage.getItem(storageKey) || "{}"); } catch { return {}; } },
                     set(v) { try { localStorage.setItem(storageKey, JSON.stringify(v)); } catch {} } };
@@ -246,14 +246,51 @@ footer { color: var(--muted); font-size: 0.85rem; }
       for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
       return (h >>> 0).toString(16).padStart(8, "0");
     };
-    const questionHash = (q) => hash(JSON.stringify([q.title || "", (q.options || []).map((o) => String(o.v ?? ""))]));
-    const validAnswer = (q, a) => !!(a && a.choice && a.decisionId === decisionId && a.questionHash === questionHash(q));
+    const questionShape = () => qs.map((q) => [String(q.id || ""), String(q.title || ""), (q.options || []).map((o) => String(o.v ?? ""))]);
+    const qsVersion = hash(JSON.stringify(questionShape()));
+    const questionHash = (q) => hash(JSON.stringify([q.id || "", q.title || "", (q.options || []).map((o) => String(o.v ?? ""))]));
+    const validAnswer = (q, a) => !!(a && a.choice && a.decisionId === decisionId && a.qsVersion === qsVersion
+      && (q.options || []).some((o) => o.v === a.choice));
     const currentAnswers = () => {
       const out = {};
       for (const q of qs) if (validAnswer(q, answers[q.id])) out[q.id] = answers[q.id];
       return out;
     };
+    const canEdit = () => !db || owner;
+    const staleSubmission = () => !!(db && submission && (!submission.decisionId || submission.decisionId !== decisionId || !submission.qsVersion || submission.qsVersion !== qsVersion));
+    const inProgress = () => !!(db && !staleSubmission()
+      && ((submission && (!agent || agent.state !== "done")) || (!submission && agent && agent.state !== "done")));
+    const docData = (snap) => {
+      if (!snap || snap.exists === false) return null;
+      if (typeof snap.data === "function") return snap.data() || null;
+      return snap.data || snap || null;
+    };
+    async function readHandoffDoc(id) {
+      const ref = db.collection("handoff").doc(id);
+      if (!ref || typeof ref.get !== "function") throw new Error("cannot verify current handoff");
+      const row = docData(await ref.get());
+      if (!row) return null;
+      if (row.decisionId && row.decisionId !== decisionId) return id === "submission" ? { decisionId: row.decisionId, qsVersion: row.qsVersion } : null;
+      return row;
+    }
+    async function refreshHandoff() {
+      submission = await readHandoffDoc("submission");
+      agent = await readHandoffDoc("agent");
+      return { submission, agent };
+    }
+    function setModeBanner() {
+      const banner = document.getElementById("hitl-mode-banner");
+      if (!hostChecked) { banner.innerHTML = ""; return; }
+      if (!db) {
+        banner.innerHTML = '<p class="banner">The agent cannot see answers on this page. Use Copy and send them where the agent reads.</p>';
+      } else if (!owner) {
+        banner.innerHTML = '<p class="banner">Only the owner can send answers.</p>';
+      } else {
+        banner.innerHTML = "";
+      }
+    }
     function draw() {
+      const readOnly = !!(db && !owner);
       document.getElementById("qs").innerHTML = qs.map((q, i) => {
         const saved = answers[q.id] || {};
         const valid = validAnswer(q, saved);
@@ -261,26 +298,38 @@ footer { color: var(--muted); font-size: 0.85rem; }
         const a = valid ? saved : {};
         const status = stale ? "needs a new answer" : (a.choice ? "Saved " + fmt(a.answeredAt) : "");
         return '<form class="card ask" data-q="' + esc(q.id) + '"><span class="muted">Question ' + (i + 1) + " of " + qs.length + "</span><h2>" + esc(q.title) + '</h2><p class="muted">' + esc(q.context) + "</p>"
-          + q.options.map((o) => '<label style="display:flex;gap:10px;align-items:flex-start"><input type="radio" name="' + esc(q.id) + '" id="' + esc(q.id + "-" + o.v) + '" value="' + esc(o.v) + '"' + (a.choice === o.v ? " checked" : "") + "><span>" + esc(o.label) + (o.rec ? ' <span class="pill p-pass">recommended</span>' : "") + "</span></label>").join("") + recNote(q)
-          + '<textarea id="' + esc(q.id) + '-note" style="width:100%;box-sizing:border-box;min-height:56px;font:inherit;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px" placeholder="Note (optional)">' + esc(a.note || "") + "</textarea>"
-          + '<button type="submit" class="cta" style="border:0;cursor:pointer">Save answer</button><span class="muted" id="' + esc(q.id) + '-st">' + status + "</span></form>";
+          + q.options.map((o) => '<label style="display:flex;gap:10px;align-items:flex-start"><input type="radio" name="' + esc(q.id) + '" id="' + esc(q.id + "-" + o.v) + '" value="' + esc(o.v) + '"' + (a.choice === o.v ? " checked" : "") + (readOnly ? " disabled" : "") + "><span>" + esc(o.label) + (o.rec ? ' <span class="pill p-pass">recommended</span>' : "") + "</span></label>").join("") + recNote(q)
+          + '<textarea id="' + esc(q.id) + '-note" style="width:100%;box-sizing:border-box;min-height:56px;font:inherit;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px" placeholder="Note (optional)"' + (readOnly ? " disabled" : "") + ">" + esc(a.note || "") + "</textarea>"
+          + '<button type="submit" class="cta" style="border:0;cursor:pointer"' + (readOnly ? " disabled" : "") + ">Save answer</button><span class=\"muted\" id=\"" + esc(q.id) + '-st">' + status + "</span></form>";
       }).join("");
+      setModeBanner();
       const done = qs.filter((q) => validAnswer(q, answers[q.id])).length;
       const send = document.getElementById("send");
-      send.disabled = !decisionId || done < qs.length || (submission && !(agent && agent.state === "done"));
+      const stale = staleSubmission();
+      const busy = inProgress();
+      send.disabled = !hostChecked || !decisionId || done < qs.length || !canEdit() || stale || busy;
       send.textContent = db ? "Send answers" : "Copy answers to send";
-      document.getElementById("send-status").textContent = !decisionId ? "Decision id missing" : done < qs.length ? (qs.length - done) + " left to answer" : submission ? "Sent " + fmt(submission.at) : "Ready to send";
-      const steps = [["Sent", submission ? fmt(submission.at) : "", !!submission], ["Received", agent?.receivedAt ? fmt(agent.receivedAt) : "", !!agent?.receivedAt],
+      document.getElementById("send-status").textContent = !hostChecked ? "Checking answer channel..."
+        : !decisionId ? "Decision id missing"
+        : !canEdit() ? "Only the owner can send answers."
+        : stale ? "This tab is out of date, reload"
+        : busy ? "This tab is out of date, reload"
+        : done < qs.length ? (qs.length - done) + " left to answer"
+        : db && submission ? "Sent " + fmt(submission.at)
+        : db ? "Ready to send" : "Ready to copy";
+      if (!db) { document.getElementById("handoff").innerHTML = ""; return; }
+      const steps = [["Sent", submission ? fmt(submission.at) : "", !!submission && !stale], ["Received", agent?.receivedAt ? fmt(agent.receivedAt) : "", !!agent?.receivedAt],
         ["Handed off", agent?.handedOff || "", ["handed-off", "done"].includes(agent?.state)], ["Result", agent?.result || "", agent?.state === "done"]];
       document.getElementById("handoff").innerHTML = steps.map((s, i) => '<li><span class="node ' + (s[2] ? "c-pass" : "c-wait") + '">' + (i + 1) + '</span><div style="display:grid;gap:2px"><span style="font-weight:600">' + s[0] + '</span><span class="muted">' + esc(s[1]) + "</span></div></li>").join("");
     }
     document.getElementById("qs").addEventListener("submit", async (ev) => {
       ev.preventDefault(); const f = ev.target; const id = f.dataset.q;
       const choice = f.querySelector("input[type=radio]:checked")?.value; const st = document.getElementById(id + "-st");
+      if (db && !owner) { st.textContent = "Only the owner can send answers."; return; }
       if (!choice) { st.textContent = "Pick an option first"; return; }
       if (!decisionId) { st.textContent = "Decision id missing"; return; }
       const q = qs.find((x) => x.id === id);
-      const row = { decisionId, questionHash: questionHash(q), choice, note: f.querySelector("textarea").value.trim(), answeredAt: new Date().toISOString() };
+      const row = { decisionId, qsVersion, questionHash: questionHash(q), choice, note: f.querySelector("textarea").value.trim(), answeredAt: new Date().toISOString() };
       try { if (db) await db.collection("answers").doc(id).set(row); answers[id] = row; if (!db) local.set(answers); draw(); }
       catch (e) { st.textContent = "Not saved: " + (e?.code || e?.message || e); }
     });
@@ -288,13 +337,33 @@ footer { color: var(--muted); font-size: 0.85rem; }
       const st = document.getElementById("send-status");
       const ready = currentAnswers();
       if (Object.keys(ready).length < qs.length) { st.textContent = "Answer every current question first"; return; }
-      if (db) { try { await db.collection("handoff").doc("submission").set({ decisionId, status: "submitted", at: new Date().toISOString(), answered: qs.length }); } catch (e) { st.textContent = "Not sent: " + (e?.code || e?.message || e); } return; }
-      const text = JSON.stringify({ decisionId, answers: ready, at: new Date().toISOString() }, null, 2);
+      if (db && !owner) { st.textContent = "Only the owner can send answers."; return; }
+      if (db) {
+        try {
+          await refreshHandoff();
+          if (staleSubmission()) { st.textContent = "This tab is out of date, reload"; draw(); return; }
+          if (inProgress()) { st.textContent = "This tab is out of date, reload"; draw(); return; }
+          const by = user && typeof user.id === "function" ? await user.id() : userId;
+          const row = { decisionId, qsVersion, by, status: "submitted", at: new Date().toISOString(), answered: qs.length };
+          await db.collection("handoff").doc("submission").set(row);
+          submission = row; agent = null; draw();
+        } catch (e) { st.textContent = "Not sent: " + (e?.code || e?.message || e); }
+        return;
+      }
+      const text = JSON.stringify({ decisionId, qsVersion, answers: ready, at: new Date().toISOString() }, null, 2);
       try { await navigator.clipboard.writeText(text); st.textContent = "Copied. Paste it where the agent reads replies."; } catch { st.textContent = text; }
     });
     Object.assign(answers, local.get()); draw();
     (async () => {
       try { db = window.claude ? await window.claude.use("db") : null; } catch { db = null; }
+      if (db) {
+        try {
+          user = await window.claude.use("user");
+          owner = !!(user && typeof user.isOwner === "function" && await user.isOwner());
+          if (owner && typeof user.id === "function") userId = await user.id();
+        } catch { owner = false; user = null; }
+      }
+      hostChecked = true;
       document.getElementById("hitl-store").textContent = db ? "Answers are shared with the agent." : "Answers stay in this browser; use Copy to send them.";
       if (!db) { draw(); return; }
       db.collection("answers").onSnapshot((s) => { for (const x of s.docs) answers[x.id] = x.data(); draw(); });
