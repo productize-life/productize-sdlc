@@ -1,19 +1,27 @@
 <!--
   decision-page.html — one page for one decision a human owes the pipeline.
-  Fill ONLY the JSON block below (id="decision"); the markup renders from it. Every `href` must
-  resolve at the ref you name in `meta.ref` before you send the link (see SKILL.md, step 5).
+  Fill ONLY the JSON block below (id="decision"); the markup renders from it. Inside JSON strings,
+  write < as \u003c, > as \u003e, and & as \u0026. Every `href` must resolve at the ref you
+  name in `meta.ref` before you send the link (see SKILL.md, step 5).
   Example content below is marked `example: true`; replace all of it.
 -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Decision page</title>
 <script type="application/json" id="decision">
 {
   "example": true,
   "meta": {
+    "id": "acme-billing-pr-42-2026-10-14",
     "project": "acme-billing",
     "item": "PR #42",
     "date": "2026-10-14",
     "ref": "main @ 1c76ec5",
-    "author": "Agent (claude)"
+    "author": "Agent (claude)",
+    "diff": { "label": "Raw diff", "href": "https://example.com/acme/billing/pull/42.diff" }
+  },
+  "independent_summary": {
+    "model": "second-engine review",
+    "text": "The independent pass agrees the owner decision is merge-or-wait, with the raw diff linked for verification."
   },
   "title": "Plan before build in the implement skill",
   "subtitle": "The agent writes a plan, a human approves it, then the build follows that plan and starts from red tests.",
@@ -48,7 +56,7 @@
     { "test": "--plan, ticket with Seams", "expect": "Only the plan file; no branch, no commit", "status": "pass", "raw": "?? plans/T-1.md · branch=main · commits=1" },
     { "test": "--plan, ticket without Seams", "expect": "Stops and asks; writes nothing", "status": "pass" },
     { "test": "--from-plan plans/T-1.md", "expect": "First commit carries the plan hash; tests red first", "status": "pass", "note": "red-first is self-reported", "raw": "Plan sha256: fcebedce… = sha256 of the plan file" },
-    { "test": "Decoy: without --plan", "expect": "Creates a branch and a commit (proves the check can fail)", "status": "decoy-red" }
+    { "test": "Decoy: without --plan", "expect": "Creates a branch and a commit (proves the check can fail)", "status": "decoy-red", "raw": "branch=feat/no-plan · commits=1 · gate correctly failed" }
   ],
   "dissent": [
     { "question": "Keep --plan or drop it?", "verdict": "Kept; the minority's red-tests-first idea became the build run's entry gate.", "flip": true },
@@ -57,7 +65,8 @@
   "open": ["What “approved” means mechanically", "How --plan composes with an existing branch"],
   "questions": [
     { "id": "q1-approve", "title": "Approve the plan as written?", "context": "Mode 2 (HITL): the owner answers on the page; the agent reads the answers and continues.",
-      "options": [ { "v": "approve", "label": "Approve, build from it", "rec": true }, { "v": "revise", "label": "Revise first (say what in the note)" }, { "v": "not-ready", "label": "Not ready" } ] }
+      "options": [ { "v": "approve", "label": "Approve, build from it", "rec": true, "why": "Seams name test files, red-first is gated, and the review flip is resolved." }, { "v": "revise", "label": "Revise first (say what in the note)" }, { "v": "not-ready", "label": "Not ready" } ],
+      "strongest_alternative": { "v": "revise", "why": "Red-first is self-reported by the agent; a revision could require it to be observed independently first." } }
   ]
 }
 </script>
@@ -65,10 +74,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: one narrow column, read top-down: the ask, the PRD trace, the gate track, before/after, evidence, dissent. */
+/* Layout: one narrow column, read top-down: blockers, the ask, the PRD trace, gates, before/after, evidence, dissent. */
 :root {
   --bg: #f6f7f5; --surface: #ffffff; --ink: #1d2421; --muted: #5d6a64; --line: #d9dfdb; --accent: #2f5d50;
   --ok: #2e7d4f; --ok-bg: #e4f2e9; --warn: #9a6a00; --warn-bg: #fbf1d8; --bad: #b23b2e; --bad-bg: #f8e3e0;
+  --decoy: #7d3f98; --decoy-bg: #f0e3f6;
   --wait: #3b5ea8; --wait-bg: #e3eaf8;
   --font-body: "Anuphan", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
@@ -76,10 +86,12 @@
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #131816; --surface: #1b2220; --ink: #e6ece9; --muted: #9aa8a1; --line: #2c3532; --accent: #7fb8a6;
   --ok: #6cc391; --ok-bg: #1d3327; --warn: #e2b54f; --warn-bg: #3a3019; --bad: #ef8a7c; --bad-bg: #3d2320;
+  --decoy: #d4a1ee; --decoy-bg: #36233f;
   --wait: #8fb0f0; --wait-bg: #1f2a40; color-scheme: dark; } }
 :root[data-theme="dark"] {
   --bg: #131816; --surface: #1b2220; --ink: #e6ece9; --muted: #9aa8a1; --line: #2c3532; --accent: #7fb8a6;
   --ok: #6cc391; --ok-bg: #1d3327; --warn: #e2b54f; --warn-bg: #3a3019; --bad: #ef8a7c; --bad-bg: #3d2320;
+  --decoy: #d4a1ee; --decoy-bg: #36233f;
   --wait: #8fb0f0; --wait-bg: #1f2a40; color-scheme: dark; }
 body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.65; margin: 0; }
 .wrap { max-width: 760px; margin: 0 auto; padding-inline: 18px; padding-block: 28px 64px; display: grid; gap: 36px; }
@@ -92,9 +104,11 @@ section { display: grid; gap: 14px; min-width: 0; }
 .banner { background: var(--warn-bg); color: var(--warn); border-radius: 8px; padding: 8px 12px; font-size: 0.9rem; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
 .ask { padding: 22px; display: grid; gap: 14px; }
+.blockers { border-color: var(--warn); }
 .who { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--wait); }
 .dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
 .cta { justify-self: start; background: var(--accent); color: var(--bg); text-decoration: none; font-weight: 600; padding: 10px 18px; border-radius: 8px; }
+.cta[aria-disabled="true"], button.cta:disabled { opacity: 0.55; cursor: not-allowed; }
 .muted { color: var(--muted); font-size: 0.92rem; }
 .trace { list-style: none; margin: 0; padding: 0; }
 .trace > li { display: grid; grid-template-columns: 104px 1fr; gap: 14px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
@@ -105,10 +119,11 @@ ul.plain { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; }
 .track li { display: grid; grid-template-columns: 26px 1fr; gap: 12px; position: relative; padding-bottom: 18px; }
 .track li:not(:last-child)::before { content: ""; position: absolute; left: 12px; top: 24px; bottom: 0; width: 2px; background: var(--line); }
 .node { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-mono); font-size: 0.75rem; border: 2px solid currentColor; background: var(--surface); }
-.c-pass { color: var(--ok); } .c-fail { color: var(--bad); } .c-wait { color: var(--wait); } .c-warn { color: var(--warn); }
+.c-pass { color: var(--ok); } .c-fail { color: var(--bad); } .c-wait { color: var(--wait); } .c-warn { color: var(--warn); } .c-decoy { color: var(--decoy); }
 .pill { display: inline-block; font-family: var(--font-mono); font-size: 0.72rem; padding: 1px 8px; border-radius: 99px; margin-right: 6px; white-space: nowrap; }
 .p-pass { background: var(--ok-bg); color: var(--ok); } .p-fail { background: var(--bad-bg); color: var(--bad); }
 .p-wait { background: var(--wait-bg); color: var(--wait); } .p-warn { background: var(--warn-bg); color: var(--warn); }
+.p-decoy { background: var(--decoy-bg); color: var(--decoy); }
 .ba { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } .ba > div { padding: 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
 .tbl { overflow-x: auto; } table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 0.93rem; }
 th, td { text-align: left; padding: 10px 14px; vertical-align: top; border-bottom: 1px solid var(--line); } tr:last-child td { border-bottom: 0; }
@@ -122,21 +137,47 @@ footer { color: var(--muted); font-size: 0.85rem; }
 <script>
 (function () {
   const root = document.getElementById("root");
+  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   let d;
   try { d = JSON.parse(document.getElementById("decision").textContent); }
-  catch (e) { root.innerHTML = '<p class="banner">The decision JSON does not parse: ' + String(e.message).replace(/</g, "&lt;") + "</p>"; return; }
-  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-  const link = (l) => l && l.href ? '<a href="' + esc(l.href) + '" target="_blank" rel="noopener">' + esc(l.label || l.href) + "</a>" : "";
+  catch (e) { root.innerHTML = '<p class="banner">The decision JSON does not parse: ' + esc(e.message) + "</p>"; return; }
+  const safeUrl = (href) => {
+    try {
+      const u = new URL(String(href || ""));
+      return u.protocol === "https:" || u.protocol === "http:" ? u.href : "";
+    } catch {
+      return "";
+    }
+  };
+  const link = (l, fallbackLabel) => {
+    if (!l) return "";
+    const v = typeof l === "string" ? { href: l, label: fallbackLabel || l } : l;
+    const text = esc(v.label || v.href || fallbackLabel || "");
+    const href = safeUrl(v.href);
+    return href ? '<a href="' + esc(href) + '" target="_blank" rel="noopener">' + text + "</a>" : text;
+  };
+  const cta = (l) => {
+    if (!l) return "";
+    const href = safeUrl(l.href);
+    const text = esc(l.label || l.href || "Open");
+    return href
+      ? '<a class="cta" data-role="cta" href="' + esc(href) + '" target="_blank" rel="noopener">' + text + "</a>"
+      : '<span class="muted" data-role="cta-text">' + text + "</span>";
+  };
   const label = { pass: "pass", fail: "failed", wait: "waiting", warn: "check", "decoy-red": "red as expected" };
-  const cls = { pass: "pass", fail: "fail", wait: "wait", warn: "warn", "decoy-red": "pass" };
+  const cls = { pass: "pass", fail: "fail", wait: "wait", warn: "warn", "decoy-red": "decoy" };
   const pill = (s) => '<span class="pill p-' + (cls[s] || "warn") + '">' + esc(label[s] || s) + "</span>";
   const list = (xs) => '<ul class="plain">' + (xs || []).map((x) => "<li>" + (typeof x === "string" ? esc(x) : pill(x.status) + esc(x.text)) + "</li>").join("") + "</ul>";
+  const isSelfReported = (e) => e && (e.self_reported === true || e.selfReported === true || /self[-\s]?reported/i.test(String(e.note || "")));
   const m = d.meta || {};
   const h = [];
   if (d.example) h.push('<p class="banner">Example content. Replace the JSON block before sending this page.</p>');
+  if (!m.id) h.push('<p class="banner">meta.id is required so stored answers cannot carry across decisions.</p>');
   h.push('<header style="display:grid;gap:10px"><div class="eyebrow">' + esc([m.project, m.item, m.date].filter(Boolean).join(" · ")) + "</div><h1>" + esc(d.title) + '</h1><p class="muted">' + esc(d.subtitle) + "</p></header>");
+  h.push(blockers());
+  if (d.independent_summary || m.diff) h.push(independentSummary());
   const a = d.ask || {};
-  h.push('<section class="card ask"><span class="who"><span class="dot"></span>Waiting on ' + esc(a.owner) + "</span><h2>" + esc(a.action) + "</h2><p>" + esc(a.why_you) + "</p>" + (a.link ? '<a class="cta" href="' + esc(a.link.href) + '" target="_blank" rel="noopener">' + esc(a.link.label) + "</a>" : "") + '<p class="muted">If nothing is done: ' + esc(a.if_nothing) + "</p></section>");
+  h.push('<section class="card ask" data-section="ask"><span class="who"><span class="dot"></span>Waiting on ' + esc(a.owner) + "</span><h2>" + esc(a.action) + "</h2><p>" + esc(a.why_you) + "</p>" + cta(a.link) + '<p class="muted">If nothing is done: ' + esc(a.if_nothing) + "</p></section>");
   h.push('<section><h2>PRD summary</h2><ol class="card trace">' + (d.trace || []).map((r) => {
     let body = r.items ? list(r.items) : "<p>" + esc(r.text) + "</p>";
     const src = [r.who ? esc(r.who) : "", link(r.source)].filter(Boolean).join(" · ");
@@ -145,7 +186,11 @@ footer { color: var(--muted); font-size: 0.85rem; }
   }).join("") + "</ol></section>");
   h.push('<section><h2>Gates so far</h2><ol class="track">' + (d.gates || []).map((g, i) => '<li><span class="node c-' + (cls[g.status] || "warn") + '">' + (i + 1) + '</span><div style="display:grid;gap:2px;min-width:0"><span style="font-weight:600">' + esc(g.title) + " " + pill(g.status) + '</span><span class="muted">' + esc(g.detail) + "</span></div></li>").join("") + "</ol></section>");
   h.push('<section><h2>What changes</h2><div class="ba"><div class="card"><div class="eyebrow">Before</div>' + list(d.before) + '</div><div class="card"><div class="eyebrow">After</div>' + list(d.after) + "</div></div></section>");
-  h.push('<section><h2>Evidence</h2><div class="card tbl"><table><thead><tr><th>Test</th><th>Expected</th><th>Result</th></tr></thead><tbody>' + (d.evidence || []).map((e) => "<tr><td>" + esc(e.test) + (e.raw ? '<div class="mono muted">' + esc(e.raw) + "</div>" : "") + "</td><td>" + esc(e.expect) + "</td><td>" + pill(e.status) + (e.note ? '<span class="pill p-warn">' + esc(e.note) + "</span>" : "") + "</td></tr>").join("") + "</tbody></table></div></section>");
+  h.push('<section><h2>Evidence</h2><div class="card tbl"><table><thead><tr><th>Test</th><th>Expected</th><th>Result</th></tr></thead><tbody>' + (d.evidence || []).map((e) => {
+    const raw = e.raw ? '<div class="mono muted">' + esc(e.raw) + "</div>" : "";
+    const missingRaw = e.status === "decoy-red" && !e.raw ? '<div class="banner">Missing raw evidence for decoy-red row.</div>' : "";
+    return "<tr><td>" + esc(e.test) + raw + "</td><td>" + esc(e.expect) + "</td><td>" + pill(e.status) + (e.note ? '<span class="pill p-warn">' + esc(e.note) + "</span>" : "") + missingRaw + "</td></tr>";
+  }).join("") + "</tbody></table></div></section>");
   if ((d.dissent || []).length) h.push("<section><h2>Where reviewers disagreed</h2>" + d.dissent.map((x) => '<div class="d' + (x.flip ? " flip" : "") + '"><span style="font-weight:600">' + esc(x.question) + '</span><span class="muted">' + esc(x.verdict) + "</span></div>").join("") + "</section>");
   if ((d.open || []).length) h.push('<section class="open"><div class="eyebrow" style="color:var(--warn)">Still yours to decide</div>' + list(d.open) + "</section>");
   if ((d.questions || []).length) h.push('<section id="hitl"><h2>Your answers</h2><p class="muted" id="hitl-store"></p><div id="qs" style="display:grid;gap:14px"></div>'
@@ -153,30 +198,78 @@ footer { color: var(--muted); font-size: 0.85rem; }
   h.push("<footer>" + esc([m.ref, m.author].filter(Boolean).join(" · ")) + "</footer>");
   root.innerHTML = h.join("");
   if (d.title) document.title = d.title;
-  if ((d.questions || []).length) hitl(d.questions);
+  if ((d.questions || []).length) hitl(d.questions, String(m.id || ""));
+
+  function blockers() {
+    const unresolved = (d.dissent || []).filter((x) => x.resolved !== true);
+    const selfReported = (d.evidence || []).filter(isSelfReported);
+    const open = d.open || [];
+    const groups = [];
+    if (unresolved.length) groups.push('<div><div class="eyebrow">Unresolved dissent</div>' + list(unresolved.map((x) => [x.question, x.verdict].filter(Boolean).join(": "))) + "</div>");
+    if (selfReported.length) groups.push('<div><div class="eyebrow">Self-reported evidence</div>' + list(selfReported.map((e) => [e.test, e.note || "self-reported"].filter(Boolean).join(": "))) + "</div>");
+    if (open.length) groups.push('<div><div class="eyebrow">Open items</div>' + list(open) + "</div>");
+    const body = groups.length ? groups.join("") : '<p class="muted">No unresolved dissent, self-reported evidence, or open items were listed.</p>';
+    return '<section id="acceptance-blockers" data-section="blockers" class="card ask blockers"><div class="eyebrow" style="color:var(--warn)">Before you act</div><h2>What you accept by acting</h2>' + body + "</section>";
+  }
+
+  function independentSummary() {
+    const s = d.independent_summary || {};
+    const parts = [];
+    if (s.text || s.model) parts.push('<div><div class="eyebrow">Independent summary' + (s.model ? " · " + esc(s.model) : "") + '</div><p>' + esc(s.text || "") + "</p></div>");
+    if (m.diff) parts.push('<p class="muted">Raw diff: ' + link(m.diff, "Raw diff") + "</p>");
+    return '<section class="card ask" data-section="independent-summary">' + parts.join("") + "</section>";
+  }
 
   // Mode 2 (HITL). Storage: the host's shared database when the page runs as a claude.ai Artifact with the
   // `db` capability (collections "answers" and "handoff"); otherwise this browser only, plus a copy button
   // so the owner can paste the answers where the agent reads them. The agent writes handoff/agent with
   // state received → handed-off → done; "handed-off" means the work was passed on, not that it is finished.
-  function hitl(qs) {
+  // A recommendation never stands alone (owner decision 2026-10-14): the recommended option states why,
+  // and the question names the strongest alternative and why someone would pick it. Missing either one
+  // renders a visible error instead of a bare "recommended" pill, so the page cannot nudge without arguing.
+  function recNote(q) {
+    const rec = q.options.find((o) => o.rec);
+    if (!rec) return "";
+    const alt = q.strongest_alternative;
+    const altOpt = alt && q.options.find((o) => o.v === alt.v && !o.rec);
+    if (!rec.why || !alt || !alt.why || !altOpt) return '<p class="banner">Recommendation without its reason or its strongest alternative. Add <code>why</code> to the recommended option and <code>strongest_alternative {v, why}</code> to the question.</p>';
+    return '<div class="muted" style="display:grid;gap:4px;border-left:3px solid var(--line);padding-left:10px"><span><strong>Recommended because:</strong> ' + esc(rec.why) + '</span><span><strong>Strongest alternative (' + esc(altOpt.label) + '):</strong> ' + esc(alt.why) + "</span></div>";
+  }
+  function hitl(qs, decisionId) {
     const answers = {}; let submission = null, agent = null, db = null;
-    const local = { get() { try { return JSON.parse(localStorage.getItem("decision-answers") || "{}"); } catch { return {}; } },
-                    set(v) { try { localStorage.setItem("decision-answers", JSON.stringify(v)); } catch {} } };
+    const storageKey = "decision-answers:" + (decisionId || "missing-decision-id");
+    const local = { get() { try { return JSON.parse(localStorage.getItem(storageKey) || "{}"); } catch { return {}; } },
+                    set(v) { try { localStorage.setItem(storageKey, JSON.stringify(v)); } catch {} } };
     const fmt = (t) => t ? new Date(t).toLocaleString() : "";
+    const hash = (s) => {
+      let h = 2166136261;
+      for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+      return (h >>> 0).toString(16).padStart(8, "0");
+    };
+    const questionHash = (q) => hash(JSON.stringify([q.title || "", (q.options || []).map((o) => String(o.v ?? ""))]));
+    const validAnswer = (q, a) => !!(a && a.choice && a.decisionId === decisionId && a.questionHash === questionHash(q));
+    const currentAnswers = () => {
+      const out = {};
+      for (const q of qs) if (validAnswer(q, answers[q.id])) out[q.id] = answers[q.id];
+      return out;
+    };
     function draw() {
       document.getElementById("qs").innerHTML = qs.map((q, i) => {
-        const a = answers[q.id] || {};
+        const saved = answers[q.id] || {};
+        const valid = validAnswer(q, saved);
+        const stale = saved.choice && !valid;
+        const a = valid ? saved : {};
+        const status = stale ? "needs a new answer" : (a.choice ? "Saved " + fmt(a.answeredAt) : "");
         return '<form class="card ask" data-q="' + esc(q.id) + '"><span class="muted">Question ' + (i + 1) + " of " + qs.length + "</span><h2>" + esc(q.title) + '</h2><p class="muted">' + esc(q.context) + "</p>"
-          + q.options.map((o) => '<label style="display:flex;gap:10px;align-items:flex-start"><input type="radio" name="' + esc(q.id) + '" id="' + esc(q.id + "-" + o.v) + '" value="' + esc(o.v) + '"' + (a.choice === o.v ? " checked" : "") + "><span>" + esc(o.label) + (o.rec ? ' <span class="pill p-pass">recommended</span>' : "") + "</span></label>").join("")
+          + q.options.map((o) => '<label style="display:flex;gap:10px;align-items:flex-start"><input type="radio" name="' + esc(q.id) + '" id="' + esc(q.id + "-" + o.v) + '" value="' + esc(o.v) + '"' + (a.choice === o.v ? " checked" : "") + "><span>" + esc(o.label) + (o.rec ? ' <span class="pill p-pass">recommended</span>' : "") + "</span></label>").join("") + recNote(q)
           + '<textarea id="' + esc(q.id) + '-note" style="width:100%;box-sizing:border-box;min-height:56px;font:inherit;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px" placeholder="Note (optional)">' + esc(a.note || "") + "</textarea>"
-          + '<button type="submit" class="cta" style="border:0;cursor:pointer">Save answer</button><span class="muted" id="' + esc(q.id) + '-st">' + (a.choice ? "Saved " + fmt(a.answeredAt) : "") + "</span></form>";
+          + '<button type="submit" class="cta" style="border:0;cursor:pointer">Save answer</button><span class="muted" id="' + esc(q.id) + '-st">' + status + "</span></form>";
       }).join("");
-      const done = qs.filter((q) => answers[q.id]?.choice).length;
+      const done = qs.filter((q) => validAnswer(q, answers[q.id])).length;
       const send = document.getElementById("send");
-      send.disabled = done < qs.length || (submission && !(agent && agent.state === "done"));
+      send.disabled = !decisionId || done < qs.length || (submission && !(agent && agent.state === "done"));
       send.textContent = db ? "Send answers" : "Copy answers to send";
-      document.getElementById("send-status").textContent = done < qs.length ? (qs.length - done) + " left to answer" : submission ? "Sent " + fmt(submission.at) : "Ready to send";
+      document.getElementById("send-status").textContent = !decisionId ? "Decision id missing" : done < qs.length ? (qs.length - done) + " left to answer" : submission ? "Sent " + fmt(submission.at) : "Ready to send";
       const steps = [["Sent", submission ? fmt(submission.at) : "", !!submission], ["Received", agent?.receivedAt ? fmt(agent.receivedAt) : "", !!agent?.receivedAt],
         ["Handed off", agent?.handedOff || "", ["handed-off", "done"].includes(agent?.state)], ["Result", agent?.result || "", agent?.state === "done"]];
       document.getElementById("handoff").innerHTML = steps.map((s, i) => '<li><span class="node ' + (s[2] ? "c-pass" : "c-wait") + '">' + (i + 1) + '</span><div style="display:grid;gap:2px"><span style="font-weight:600">' + s[0] + '</span><span class="muted">' + esc(s[1]) + "</span></div></li>").join("");
@@ -185,14 +278,18 @@ footer { color: var(--muted); font-size: 0.85rem; }
       ev.preventDefault(); const f = ev.target; const id = f.dataset.q;
       const choice = f.querySelector("input[type=radio]:checked")?.value; const st = document.getElementById(id + "-st");
       if (!choice) { st.textContent = "Pick an option first"; return; }
-      const row = { choice, note: f.querySelector("textarea").value.trim(), answeredAt: new Date().toISOString() };
-      try { if (db) await db.collection("answers").doc(id).set(row); else { answers[id] = row; local.set(answers); draw(); } }
+      if (!decisionId) { st.textContent = "Decision id missing"; return; }
+      const q = qs.find((x) => x.id === id);
+      const row = { decisionId, questionHash: questionHash(q), choice, note: f.querySelector("textarea").value.trim(), answeredAt: new Date().toISOString() };
+      try { if (db) await db.collection("answers").doc(id).set(row); answers[id] = row; if (!db) local.set(answers); draw(); }
       catch (e) { st.textContent = "Not saved: " + (e?.code || e?.message || e); }
     });
     document.getElementById("send").addEventListener("click", async () => {
       const st = document.getElementById("send-status");
-      if (db) { try { await db.collection("handoff").doc("submission").set({ status: "submitted", at: new Date().toISOString(), answered: qs.length }); } catch (e) { st.textContent = "Not sent: " + (e?.code || e?.message || e); } return; }
-      const text = JSON.stringify({ answers, at: new Date().toISOString() }, null, 2);
+      const ready = currentAnswers();
+      if (Object.keys(ready).length < qs.length) { st.textContent = "Answer every current question first"; return; }
+      if (db) { try { await db.collection("handoff").doc("submission").set({ decisionId, status: "submitted", at: new Date().toISOString(), answered: qs.length }); } catch (e) { st.textContent = "Not sent: " + (e?.code || e?.message || e); } return; }
+      const text = JSON.stringify({ decisionId, answers: ready, at: new Date().toISOString() }, null, 2);
       try { await navigator.clipboard.writeText(text); st.textContent = "Copied. Paste it where the agent reads replies."; } catch { st.textContent = text; }
     });
     Object.assign(answers, local.get()); draw();
@@ -201,7 +298,7 @@ footer { color: var(--muted); font-size: 0.85rem; }
       document.getElementById("hitl-store").textContent = db ? "Answers are shared with the agent." : "Answers stay in this browser; use Copy to send them.";
       if (!db) { draw(); return; }
       db.collection("answers").onSnapshot((s) => { for (const x of s.docs) answers[x.id] = x.data(); draw(); });
-      db.collection("handoff").onSnapshot((s) => { for (const x of s.docs) { if (x.id === "submission") submission = x.data(); if (x.id === "agent") agent = x.data(); } draw(); });
+      db.collection("handoff").onSnapshot((s) => { for (const x of s.docs) { const row = x.data(); if (row.decisionId && row.decisionId !== decisionId) continue; if (x.id === "submission") submission = row; if (x.id === "agent") agent = row; } draw(); });
       draw();
     })();
   }

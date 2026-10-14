@@ -46,7 +46,7 @@ Two tables: (1) **intent → skill** — what to reach for, and how the skills c
 grilling (with the human) → to-spec / your spec skill → sdlc-product-design (UI work, before tickets) → to-tickets (sdlc-triage writes the seams)
   → sdlc-code-how before touching unfamiliar code → sdlc-implement + tdd per ticket
   (fresh context each, seams in the brief) → sdlc-blast-radius on the chosen change
-  → code-review + a second-engine review → sdlc-pr → sdlc-watch-pr to a verdict → sdlc-decision-page → human merge
+  → code-review + a second-engine review → sdlc-pr → sdlc-watch-pr → (manual) sdlc-decision-page → human merge
 ```
 
 Long or unattended runs keep a trail with `sdlc-show-me-your-work` the whole way.
