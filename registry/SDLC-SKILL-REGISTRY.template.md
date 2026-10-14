@@ -60,6 +60,7 @@ Suggested starter mapping if you install the `productize-sdlc` pack (edit to you
 | Merge conflicts | `sdlc-merge-resolve` | pack | 🔧 | abort-and-escalate patch |
 | PR / release | `sdlc-pr` | pack | 🟩 | template in `templates/pr-template.md` |
 | PR — watch to a verdict (after open) | `sdlc-watch-pr` | pack (pstack, MIT) | 🟩 | readiness verdict only; never merges; new in 0.3.0 |
+| Owner decision — the page the human acts from | `sdlc-decision-page` | pack | 🟩 | ask + PRD trace + evidence; set the team's notification channel here (default: PR body + chat) |
 | Decision trail for unattended / multi-phase runs | `sdlc-show-me-your-work` | pack (pstack, MIT) | 🟩 | append-only TSV + cross-family review of the trail; new in 0.3.0 |
 | Deploy / publish | {your deploy skills} | you | — | not shipped in the pack |
 | Handoff / continuity | {write-handoff, verify-claims} | starter-fleet-kit | 🟢 | sibling kit in this org |

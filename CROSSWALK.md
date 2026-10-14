@@ -35,6 +35,7 @@ Two tables: (1) **intent → skill** — what to reach for, and how the skills c
 | "Why is it built this way?" / history of a decision | `sdlc-code-why` |
 | "What could this fix break?" / after a fix is chosen | `sdlc-blast-radius` |
 | "Is the PR green / ready?" / after opening it | `sdlc-watch-pr` |
+| "What's waiting on me?" / work reaches an owner-only gate | `sdlc-decision-page` |
 | "Log your decisions" / unattended or multi-phase run | `sdlc-show-me-your-work` |
 
 ## The chain (how a feature walks through)
@@ -43,7 +44,7 @@ Two tables: (1) **intent → skill** — what to reach for, and how the skills c
 grilling (with the human) → to-spec / your spec skill → sdlc-product-design (UI work, before tickets) → to-tickets (sdlc-triage writes the seams)
   → sdlc-code-how before touching unfamiliar code → sdlc-implement + tdd per ticket
   (fresh context each, seams in the brief) → sdlc-blast-radius on the chosen change
-  → code-review + a second-engine review → sdlc-pr → sdlc-watch-pr to a verdict → human merge
+  → code-review + a second-engine review → sdlc-pr → sdlc-watch-pr to a verdict → sdlc-decision-page → human merge
 ```
 
 Long or unattended runs keep a trail with `sdlc-show-me-your-work` the whole way.
@@ -104,6 +105,7 @@ practice. Product-specific internals were stripped; the disciplines are the shar
 | `sdlc-pr` | Intent-first PR body (Summary + Intent, file tables, review-fixes), review-matrix routing by risk, mandatory 2nd-engine section, **Accountability with runnable evidence**. |
 | `sdlc-ddd` | Coach-not-generator domain discovery; the one-file write exception (CONTEXT.md) for confirmed language only. |
 | `sdlc-product-design` | Our synthesis of published methods (sources cited in the skill). UX/product design as a phase before the build: JTBD per persona, journey maps whose "cognitive state" is three checkable questions (expectation, wayfinding, decision), lo-fi wireframes with interaction notes that test design reads. |
+| `sdlc-decision-page` | One page per decision a human owes the pipeline: the ask and its single action first, then a **PRD trace back to the idea and the requirement**, gates, before/after, evidence with its decoy, reviewer dissent. Content is one JSON block; the page renders from it. |
 | `sdlc-adr` / `sdlc-pe-review` | ADRs small enough to read, with sacred status and first-class deferred items; technical decisions translated to PM-decidable questions with a recommendation. |
 
 Templates: `templates/pr-template.md` (the exact PR body we use), `templates/issue-tracker.template.md`.

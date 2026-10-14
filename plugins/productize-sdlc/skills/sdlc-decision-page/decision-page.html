@@ -1,0 +1,151 @@
+<!--
+  decision-page.html — one page for one decision a human owes the pipeline.
+  Fill ONLY the JSON block below (id="decision"); the markup renders from it. Every `href` must
+  resolve at the ref you name in `meta.ref` before you send the link (see SKILL.md, step 5).
+  Example content below is marked `example: true`; replace all of it.
+-->
+<title>Decision page</title>
+<script type="application/json" id="decision">
+{
+  "example": true,
+  "meta": {
+    "project": "acme-billing",
+    "item": "PR #42",
+    "date": "2026-10-14",
+    "ref": "main @ 1c76ec5",
+    "author": "Agent (claude)"
+  },
+  "title": "Plan before build in the implement skill",
+  "subtitle": "The agent writes a plan, a human approves it, then the build follows that plan and starts from red tests.",
+  "ask": {
+    "owner": "Release owner",
+    "action": "Merge PR #42 to ship 0.4.0",
+    "why_you": "Merging publishes to every installer and cannot be taken back, so the agent did not merge.",
+    "link": { "label": "Open PR #42", "href": "https://example.com/acme/billing/pull/42" },
+    "if_nothing": "Nothing happens. The PR stays open; the internal copy already has the change."
+  },
+  "trace": [
+    { "kind": "idea", "text": "“When we say execute, does the kit just start writing code?”", "source": { "label": "decision note", "href": "https://example.com/notes/2026-10-13-implement-gates" }, "who": "Product owner, 2026-10-13 (verbatim)" },
+    { "kind": "requirement", "text": "Autonomous ticket→implement must stop or ask when the brief has no test seams; today it guesses.", "source": { "label": "goal: phase seams", "href": "https://example.com/goals/phase-seams" } },
+    { "kind": "problem", "text": "The stop-if-no-seams gate lives only in a skill someone must type; logs show it ran once in 1,654 sessions." },
+    { "kind": "solution", "items": ["Seams required in every coding brief", "Deterministic no-seams gate before the plan step", "--plan / --from-plan in the implement skill"] },
+    { "kind": "measure", "items": [
+      { "status": "pass", "text": "Issue without Seams → blocked: no-seams, no PR" },
+      { "status": "pass", "text": "Issue with Seams → PR, CI green, gate SHA matches" },
+      { "status": "wait", "text": "0.4.0 reaches outside users" }
+    ] },
+    { "kind": "not doing", "text": "No mechanism for what “approved” means; no registry-level seam files this round." }
+  ],
+  "gates": [
+    { "status": "pass", "title": "Draft 0.3.2", "detail": "Tested in scratch repos; a decoy caught a test harness that had died silently." },
+    { "status": "fail", "title": "Multi-model review flipped it", "detail": "Wording contradicted itself; nothing bound the build to the approved plan." },
+    { "status": "pass", "title": "Fixed as 0.4.0", "detail": "Explicit override, --from-plan with plan hash, red tests first." },
+    { "status": "wait", "title": "Publish", "detail": "Merge PR #42." }
+  ],
+  "before": ["Saying implement starts writing code at once", "No moment to read a plan first", "TDD is asked for but nobody checks the test was red first"],
+  "after": ["--plan writes only the plan; no branch, no code", "Each seam names a test file and test name", "--from-plan records the plan hash and starts from failing tests", "No Seams in the ticket → it stops and asks"],
+  "evidence": [
+    { "test": "--plan, ticket with Seams", "expect": "Only the plan file; no branch, no commit", "status": "pass", "raw": "?? plans/T-1.md · branch=main · commits=1" },
+    { "test": "--plan, ticket without Seams", "expect": "Stops and asks; writes nothing", "status": "pass" },
+    { "test": "--from-plan plans/T-1.md", "expect": "First commit carries the plan hash; tests red first", "status": "pass", "note": "red-first is self-reported", "raw": "Plan sha256: fcebedce… = sha256 of the plan file" },
+    { "test": "Decoy: without --plan", "expect": "Creates a branch and a commit (proves the check can fail)", "status": "decoy-red" }
+  ],
+  "dissent": [
+    { "question": "Keep --plan or drop it?", "verdict": "Kept; the minority's red-tests-first idea became the build run's entry gate.", "flip": true },
+    { "question": "Where does the plan live?", "verdict": "Tracker comment if there is one, else an untracked plans/ file." }
+  ],
+  "open": ["What “approved” means mechanically", "How --plan composes with an existing branch"]
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one narrow column, read top-down: the ask, the PRD trace, the gate track, before/after, evidence, dissent. */
+:root {
+  --bg: #f6f7f5; --surface: #ffffff; --ink: #1d2421; --muted: #5d6a64; --line: #d9dfdb; --accent: #2f5d50;
+  --ok: #2e7d4f; --ok-bg: #e4f2e9; --warn: #9a6a00; --warn-bg: #fbf1d8; --bad: #b23b2e; --bad-bg: #f8e3e0;
+  --wait: #3b5ea8; --wait-bg: #e3eaf8;
+  --font-body: "Anuphan", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #131816; --surface: #1b2220; --ink: #e6ece9; --muted: #9aa8a1; --line: #2c3532; --accent: #7fb8a6;
+  --ok: #6cc391; --ok-bg: #1d3327; --warn: #e2b54f; --warn-bg: #3a3019; --bad: #ef8a7c; --bad-bg: #3d2320;
+  --wait: #8fb0f0; --wait-bg: #1f2a40; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #131816; --surface: #1b2220; --ink: #e6ece9; --muted: #9aa8a1; --line: #2c3532; --accent: #7fb8a6;
+  --ok: #6cc391; --ok-bg: #1d3327; --warn: #e2b54f; --warn-bg: #3a3019; --bad: #ef8a7c; --bad-bg: #3d2320;
+  --wait: #8fb0f0; --wait-bg: #1f2a40; color-scheme: dark; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.65; margin: 0; }
+.wrap { max-width: 760px; margin: 0 auto; padding-inline: 18px; padding-block: 28px 64px; display: grid; gap: 36px; }
+h1, h2 { text-wrap: balance; margin: 0; } h1 { font-size: 1.75rem; line-height: 1.25; } h2 { font-size: 1.15rem; font-weight: 600; }
+p { margin: 0; } a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible { outline: 3px solid var(--wait); outline-offset: 2px; }
+code, .mono { font-family: var(--font-mono); font-size: 0.86em; }
+.eyebrow { font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.06em; color: var(--muted); text-transform: uppercase; }
+section { display: grid; gap: 14px; min-width: 0; }
+.banner { background: var(--warn-bg); color: var(--warn); border-radius: 8px; padding: 8px 12px; font-size: 0.9rem; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.ask { padding: 22px; display: grid; gap: 14px; }
+.who { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--wait); }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+.cta { justify-self: start; background: var(--accent); color: var(--bg); text-decoration: none; font-weight: 600; padding: 10px 18px; border-radius: 8px; }
+.muted { color: var(--muted); font-size: 0.92rem; }
+.trace { list-style: none; margin: 0; padding: 0; }
+.trace > li { display: grid; grid-template-columns: 104px 1fr; gap: 14px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.trace > li:last-child { border-bottom: 0; } .trace > li > div { display: grid; gap: 6px; min-width: 0; }
+.tk { font-family: var(--font-mono); font-size: 0.74rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent); padding-top: 3px; }
+ul.plain { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; }
+.track { list-style: none; margin: 0; padding: 0; }
+.track li { display: grid; grid-template-columns: 26px 1fr; gap: 12px; position: relative; padding-bottom: 18px; }
+.track li:not(:last-child)::before { content: ""; position: absolute; left: 12px; top: 24px; bottom: 0; width: 2px; background: var(--line); }
+.node { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-family: var(--font-mono); font-size: 0.75rem; border: 2px solid currentColor; background: var(--surface); }
+.c-pass { color: var(--ok); } .c-fail { color: var(--bad); } .c-wait { color: var(--wait); } .c-warn { color: var(--warn); }
+.pill { display: inline-block; font-family: var(--font-mono); font-size: 0.72rem; padding: 1px 8px; border-radius: 99px; margin-right: 6px; white-space: nowrap; }
+.p-pass { background: var(--ok-bg); color: var(--ok); } .p-fail { background: var(--bad-bg); color: var(--bad); }
+.p-wait { background: var(--wait-bg); color: var(--wait); } .p-warn { background: var(--warn-bg); color: var(--warn); }
+.ba { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } .ba > div { padding: 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.tbl { overflow-x: auto; } table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 0.93rem; }
+th, td { text-align: left; padding: 10px 14px; vertical-align: top; border-bottom: 1px solid var(--line); } tr:last-child td { border-bottom: 0; }
+th { font-weight: 600; color: var(--muted); font-size: 0.82rem; }
+.d { border-left: 3px solid var(--line); padding: 2px 0 2px 14px; display: grid; gap: 4px; } .d.flip { border-left-color: var(--warn); }
+.open { background: var(--warn-bg); border-radius: 10px; padding: 16px; display: grid; gap: 8px; }
+footer { color: var(--muted); font-size: 0.85rem; }
+@media (max-width: 560px) { .ba { grid-template-columns: 1fr; } .trace > li { grid-template-columns: 1fr; gap: 4px; } }
+</style>
+<div class="wrap" id="root"><p class="muted">Loading decision…</p></div>
+<script>
+(function () {
+  const root = document.getElementById("root");
+  let d;
+  try { d = JSON.parse(document.getElementById("decision").textContent); }
+  catch (e) { root.innerHTML = '<p class="banner">The decision JSON does not parse: ' + String(e.message).replace(/</g, "&lt;") + "</p>"; return; }
+  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const link = (l) => l && l.href ? '<a href="' + esc(l.href) + '" target="_blank" rel="noopener">' + esc(l.label || l.href) + "</a>" : "";
+  const label = { pass: "pass", fail: "failed", wait: "waiting", warn: "check", "decoy-red": "red as expected" };
+  const cls = { pass: "pass", fail: "fail", wait: "wait", warn: "warn", "decoy-red": "pass" };
+  const pill = (s) => '<span class="pill p-' + (cls[s] || "warn") + '">' + esc(label[s] || s) + "</span>";
+  const list = (xs) => '<ul class="plain">' + (xs || []).map((x) => "<li>" + (typeof x === "string" ? esc(x) : pill(x.status) + esc(x.text)) + "</li>").join("") + "</ul>";
+  const m = d.meta || {};
+  const h = [];
+  if (d.example) h.push('<p class="banner">Example content. Replace the JSON block before sending this page.</p>');
+  h.push('<header style="display:grid;gap:10px"><div class="eyebrow">' + esc([m.project, m.item, m.date].filter(Boolean).join(" · ")) + "</div><h1>" + esc(d.title) + '</h1><p class="muted">' + esc(d.subtitle) + "</p></header>");
+  const a = d.ask || {};
+  h.push('<section class="card ask"><span class="who"><span class="dot"></span>Waiting on ' + esc(a.owner) + "</span><h2>" + esc(a.action) + "</h2><p>" + esc(a.why_you) + "</p>" + (a.link ? '<a class="cta" href="' + esc(a.link.href) + '" target="_blank" rel="noopener">' + esc(a.link.label) + "</a>" : "") + '<p class="muted">If nothing is done: ' + esc(a.if_nothing) + "</p></section>");
+  h.push('<section><h2>PRD summary</h2><ol class="card trace">' + (d.trace || []).map((r) => {
+    let body = r.items ? list(r.items) : "<p>" + esc(r.text) + "</p>";
+    const src = [r.who ? esc(r.who) : "", link(r.source)].filter(Boolean).join(" · ");
+    if (src) body += '<p class="muted">' + src + "</p>";
+    return '<li><span class="tk">' + esc(r.kind) + "</span><div>" + body + "</div></li>";
+  }).join("") + "</ol></section>");
+  h.push('<section><h2>Gates so far</h2><ol class="track">' + (d.gates || []).map((g, i) => '<li><span class="node c-' + (cls[g.status] || "warn") + '">' + (i + 1) + '</span><div style="display:grid;gap:2px;min-width:0"><span style="font-weight:600">' + esc(g.title) + " " + pill(g.status) + '</span><span class="muted">' + esc(g.detail) + "</span></div></li>").join("") + "</ol></section>");
+  h.push('<section><h2>What changes</h2><div class="ba"><div class="card"><div class="eyebrow">Before</div>' + list(d.before) + '</div><div class="card"><div class="eyebrow">After</div>' + list(d.after) + "</div></div></section>");
+  h.push('<section><h2>Evidence</h2><div class="card tbl"><table><thead><tr><th>Test</th><th>Expected</th><th>Result</th></tr></thead><tbody>' + (d.evidence || []).map((e) => "<tr><td>" + esc(e.test) + (e.raw ? '<div class="mono muted">' + esc(e.raw) + "</div>" : "") + "</td><td>" + esc(e.expect) + "</td><td>" + pill(e.status) + (e.note ? '<span class="pill p-warn">' + esc(e.note) + "</span>" : "") + "</td></tr>").join("") + "</tbody></table></div></section>");
+  if ((d.dissent || []).length) h.push("<section><h2>Where reviewers disagreed</h2>" + d.dissent.map((x) => '<div class="d' + (x.flip ? " flip" : "") + '"><span style="font-weight:600">' + esc(x.question) + '</span><span class="muted">' + esc(x.verdict) + "</span></div>").join("") + "</section>");
+  if ((d.open || []).length) h.push('<section class="open"><div class="eyebrow" style="color:var(--warn)">Still yours to decide</div>' + list(d.open) + "</section>");
+  h.push("<footer>" + esc([m.ref, m.author].filter(Boolean).join(" · ")) + "</footer>");
+  root.innerHTML = h.join("");
+  if (d.title) document.title = d.title;
+})();
+</script>
